@@ -1,17 +1,16 @@
 import re
 import tkinter as tk
 import difflib
+import csv
+#import PyMuPDF
 import PyPDF2
 from PrefPage import PrefPhraseController
-from tkinter import ttk, filedialog  # For TabPane and other modern widgets
+from tkinter import ttk, filedialog, messagebox  # For TabPane and other modern widgets
 from PyPDF2 import PdfReader
 
 import tkPDFViewerUpdated as pdf
+from robot import Robot
 
-class Person:
-    def __init__(self):
-        # Initialize an empty dictionary to store the data for each person
-        self.data = {}
 
 class APP:
     def __init__(self):
@@ -20,7 +19,9 @@ class APP:
         self.prevPDF = ""
 
         self.export_csv = ""
+        self.csv_flag = False
         self.app_path = ""
+        self.app_flag = False
         self.settings = ""
         self.regex_pairs = []
         self.data_replace_pairs = []
@@ -39,7 +40,6 @@ class APP:
         self.filemenu = tk.Menu(self.menubar, tearoff=0)
         self.filemenu.add_command(label="New File", command=self.onAddPdfButtonClick)
         self.openRecentMenu = tk.Menu(self.filemenu, tearoff=0)
-        #self.openRecentMenu.add_command(label="Open Recent")
         self.openRecentMenuItem = tk.Menu(self.openRecentMenu, tearoff=0)
         self.openRecentMenuItem.add_command(label="", command=self.onOpenRecentMenuItemClick)
         self.filemenu.add_cascade(label="Open Recent", menu=self.openRecentMenuItem)
@@ -159,6 +159,7 @@ class APP:
             self.filesList.selection_set(self.filesList.size()-1)
             self.setPDFView(self.activePDF)
             self.openRecentMenuItem.entryconfig(0,label=self.prevPDF)
+            self.people = []
             #print("Selected file:", file)
 
     def on_filesList_select(self,event):
@@ -172,9 +173,11 @@ class APP:
             matcher = difflib.SequenceMatcher(None, self.activePDF, selected_item)
             # ratio = matcher.ratio()
             print(matcher.ratio())
-            if matcher.ratio() < 0.75:
+            if matcher.ratio() < 0.95:
+                self.prevPDF = self.activePDF
                 self.activePDF = selected_item
                 self.setPDFView(self.activePDF)
+                self.people = []
 
         else:
             print("ERROR: Nothing Selected")
@@ -212,6 +215,8 @@ class APP:
         temp = self.activePDF
         self.activePDF = self.prevPDF
         self.prevPDF = temp
+        self.people = []
+
 
     def onPrefClick(self):
         # Function to handle opening preferences
@@ -229,7 +234,9 @@ class APP:
         print("Settings: " + self.settings)
 
         self.export_csv = data["export_csv"]
+        self.csv_flag = data["csv_flag"]
         self.app_path = data["app_path"]
+        self.app_flag = data["app_flag"]
         self.settings = data["settings"]
         self.regex_pairs = data["regex pairs"]
         self.data_replace_pairs = data["data Replace Pairs"]
@@ -291,7 +298,7 @@ class APP:
                 self.simplified_text_area.delete("1.0", tk.END)
                 self.simplified_text_area.insert(1.0, "Add preferences to settings")
             elif not self.people:
-                current_person = Person()
+                current_person = {}
                 with open(self.activePDF, 'rb') as pdf_file:
                     pdf_reader = PdfReader(pdf_file)
                     for page in pdf_reader.pages:
@@ -304,23 +311,30 @@ class APP:
                                     for tupleEntry in item:
                                         for start, end in self.data_replace_pairs:
                                             tupleEntry = tupleEntry.replace(start, end)
+                                        if not tupleEntry.strip():
+                                            tupleEntry = ""
                                         personData.append(tupleEntry)
                                 else:
                                     for start, end in self.data_replace_pairs:
                                         item = item.replace(start, end)
                                     personData.append(item)
                                 if len(matches) > 1:
-                                    current_person.data[data_name + " " + str(index)] = personData
+                                    current_person[data_name + " " + str(index)] = personData
                                 else:
-                                    current_person.data[data_name] = personData
+                                    current_person[data_name] = personData
                                 index += 1
                         self.people.append(current_person)
-                        current_person = Person()
+                        current_person= {}
 
                 text = ""
+                text += str(self.extract_unique_keys(self.people))
+                text += "\n"
                 for person in self.people:
-                    for key, value in person.data.items():
-                        text += f"{key}: {value}"
+                    if len(person) > 0:
+                        for value in person.values():
+                            text += str(value)
+                            text += ", "
+                        text += "\n"
 
                 self.simplified_text_area.delete("1.0", tk.END)
                 self.simplified_text_area.insert(1.0, text)
@@ -330,6 +344,45 @@ class APP:
     def onExportClick(self):
         # Function to handle export click
         print("Export button clicked")
+        if self.people:
+            if self.app_flag:
+                print("Exporting to App")
+                robot = Robot(self)
+                robot.create_new_patients()
+            if self.csv_flag:
+                print("Exporting to CSV")
+                self.write_dict_list_to_csv(self.people)
+            print(self.people)
+        else:
+            messagebox.showerror("Warning!","Please load a pdf or check preferences")
+
+    def extract_unique_keys(self,data):
+        fieldnames = set()
+        for dict in data:
+            fieldnames.update(dict.keys())
+        return list(fieldnames)
+
+    def write_dict_list_to_csv(self,data, fieldnames=None):
+        if fieldnames is None:
+            if not data:
+                raise ValueError("fieldnames must be provided if the data list is empty.")
+            fieldnames = self.extract_unique_keys(data)
+
+        try:
+            with open(self.export_csv, 'w', newline='', encoding='utf-8') as csvfile:  # Use 'with' for automatic file closing
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+                writer.writeheader()  # Write the header row
+
+                for row in data:
+                    if len(row) > 0:
+                        writer.writerow(row)
+
+        except Exception as e:
+            print(f"An error ocurred writing into the file: {e}")
+            raise
+        finally:
+            csvfile.close()
 
     def onAboutMenuItemClick(self):
         # Function to handle About menu item click

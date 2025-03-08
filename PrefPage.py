@@ -475,7 +475,9 @@ class PrefPhraseController:
         # Get the data you want to pass
         data_to_pass = {
             "export_csv": self.export_csv,
+            "csv_flag": bool(self.export_csv_flag),
             "app_path": self.app_path,
+            "app_flag": bool(self.export_app_flag),
             "settings": self.settings,
             "regex pairs": self.regexPairs,
             "data Replace Pairs": self.dataReplacePairs
