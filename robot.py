@@ -47,11 +47,19 @@ class Robot:
 
     def type_patient_info(self):
         try:
+            pyautogui.click(self.png_locations["patientList"][0], self.png_locations["patientList"][1])
+            pyautogui.sleep(1.5)
+            pyautogui.press('f8')
+
+            time.sleep(3.5)
+
+
+
             pyautogui.click(self.png_locations["FirstNameBox"][0] + 40, self.png_locations["FirstNameBox"][1] + 10)
-            pyautogui.write(self.person["Legal Name"][0].upper())
+            pyautogui.write(self.person["Legal Name"][1].upper())
 
             pyautogui.click(self.png_locations["LastNameBox"][0] + 40, self.png_locations["LastNameBox"][1])
-            pyautogui.write(self.person["Legal Name"][1].upper())
+            pyautogui.write(self.person["Legal Name"][0].upper())
 
             pyautogui.click(self.png_locations["MiddleInitalBox"][0] + 40, self.png_locations["MiddleInitalBox"][1])
             pyautogui.write(self.person["Legal Name"][2].upper())
@@ -66,7 +74,7 @@ class Robot:
             pyautogui.write(self.person["Address"][1].upper())
             pyautogui.press('enter')
 
-            pyautogui.click(self.png_locations["StateBox"][0] + 40, self.png_locations["StateBox"][1])
+            pyautogui.doubleClick(self.png_locations["StateBox"][0] + 40, self.png_locations["StateBox"][1],interval=0.2)
             pyautogui.write(self.person["Address"][2].upper())
 
             pyautogui.click(self.png_locations["PostCodeBox"][0] + 40, self.png_locations["PostCodeBox"][1])
@@ -88,8 +96,11 @@ class Robot:
             pyautogui.click(self.png_locations["PostCodeBox"][0] + 40, self.png_locations["PostCodeBox"][1])
             pyautogui.write(self.person["Address (Apt)"][4].upper())
 
-        #pyautogui.click(self.png_locations["PhoneBox"][0] + 40, self.png_locations["PhoneBox"][1])
-        #pyautogui.write("4802285929")
+        try:
+            pyautogui.click(self.png_locations["PhoneBox"][0] + 40, self.png_locations["PhoneBox"][1])
+            pyautogui.write(self.person["Phone"][0])
+        except Exception as e:
+            print("no phone")
 
         pyautogui.click(self.png_locations["GenderBox"][0] + 40, self.png_locations["GenderBox"][1])
         pyautogui.write(self.person["Legal Sex"][0][0].upper())
@@ -156,6 +167,13 @@ class Robot:
                 pyautogui.press('enter')
                 pyautogui.sleep(0.2)
 
+                #RELATION
+                pyautogui.click(self.png_locations["InsuranceNameBox"][2][0] + 40,
+                                self.png_locations["InsuranceNameBox"][2][1]+20)
+                pyautogui.write("S")
+                pyautogui.press('enter')
+                pyautogui.sleep(0.2)
+
                 pyautogui.click(self.png_locations["PolicyIDBox"][2][0] + 50, self.png_locations["PolicyIDBox"][2][1])
                 pyautogui.write(self.person["Insurance 2"][3])
                 pyautogui.press('enter')
@@ -181,6 +199,10 @@ class Robot:
         pyautogui.hotkey('ctrl', 'c')
         time.sleep(0.5)
         self.clipboard = pyperclip.paste()
+        pyautogui.press("esc")
+        pyautogui.sleep(0.5)
+        pyautogui.press("esc")
+        time.sleep(3)
 
 
     def find_similar_index(self, list_of_strings, target_string, similarity_threshold=0.8):
@@ -218,6 +240,10 @@ class Robot:
         self.load_png_list(self.insurance_list_page, multi=True)
 
         pyautogui.click(self.png_locations["PatientInfoList"][0], self.png_locations["PatientInfoList"][1])
+        pyautogui.sleep(1)
+        pyautogui.press('esc')
+        pyautogui.sleep(1)
+        pyautogui.press('esc')
 
     def load_png_list(self, png_list,multi=False):
         for png in png_list:
