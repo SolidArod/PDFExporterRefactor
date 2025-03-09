@@ -224,8 +224,8 @@ class APP:
         # Create the settings window
         settings_window = tk.Toplevel(self.root)
         pref_controller = PrefPhraseController(settings_window, self)
-        pref_controller.settings = "settings.txt"
-        pref_controller.load_from_file()
+        #pref_controller.settings = "settings.txt"
+        pref_controller.load_from_json()
 
     def update_from_settings(self, data):
         """Updates the PdfViewer with data from the settings."""
@@ -243,7 +243,7 @@ class APP:
 
         print("Export_Csv: " + self.export_csv)
         print("App_path: " + self.app_path)
-        print("Settings: " + self.settings)
+        print("Settings: " + str(self.settings))
         print("Regex pairs:")
         for data_name, regex_exp in self.regex_pairs:
             print(data_name + ": "+str(regex_exp))

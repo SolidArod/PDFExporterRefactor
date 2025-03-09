@@ -9,8 +9,6 @@ import pyperclip
 
 from pathlib import Path
 
-from traits.trait_types import false
-
 
 class Robot:
     def __init__(self,pdf_viewer_app):
@@ -48,10 +46,10 @@ class Robot:
     def type_patient_info(self):
         try:
             pyautogui.click(self.png_locations["FirstNameBox"][0] + 40, self.png_locations["FirstNameBox"][1] + 10)
-            pyautogui.write(self.person["Legal Name"][0].upper())
+            pyautogui.write(self.person["Legal Name"][1].upper())
 
             pyautogui.click(self.png_locations["LastNameBox"][0] + 40, self.png_locations["LastNameBox"][1])
-            pyautogui.write(self.person["Legal Name"][1].upper())
+            pyautogui.write(self.person["Legal Name"][0].upper())
 
             pyautogui.click(self.png_locations["MiddleInitalBox"][0] + 40, self.png_locations["MiddleInitalBox"][1])
             pyautogui.write(self.person["Legal Name"][2].upper())

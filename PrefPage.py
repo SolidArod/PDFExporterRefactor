@@ -1,5 +1,7 @@
 import re
+import json
 import tkinter as tk
+from pathlib import Path
 from tkinter import ttk, filedialog, messagebox
 import os
 
@@ -20,7 +22,8 @@ class PrefPhraseController:
         self.people = []
         self.export_csv = ""
         self.app_path = ""
-        self.settings = ""
+        self.settings = Path(__file__).parent
+        self.settings = self.settings / "settings.json"
 
         #initialize buttons and such:
         self.dataRep_add_button = None
@@ -37,11 +40,7 @@ class PrefPhraseController:
         self.confirm_settings_button = None
         self.error_text_label = None
         self.load_settings_button = None
-        self.load_settings_textfield = None
-        self.load_settings_label = None
-        self.save_warning_label = None
         self.save_settings_button = None
-        self.save_settings_label = None
         self.Save_settings_tab = None
         self.replace_phrase_result_textfield = None
         self.phrase_to_replace_textfield = None
@@ -186,39 +185,16 @@ class PrefPhraseController:
         self.Save_settings_tab = tk.Frame(self.tabpane)
         self.tabpane.add(self.Save_settings_tab, text="Save to File Settings")
 
-        self.save_settings_label = tk.Label(self.Save_settings_tab, text="Save:", font=("TkDefaultFont", 10))
-        self.save_settings_label.grid(row=0, column=0, padx=5, pady=5)
-
-        self.save_settings_textfield = ttk.Entry(self.Save_settings_tab)
-        self.save_settings_textfield.grid(row=0, column=1, padx=5, pady=5)
-
         self.save_settings_button = ttk.Button(
             self.Save_settings_tab, text=" Save to File ", command=self.save_to_file_path_click
         )
-        self.save_settings_button.grid(row=0, column=2, padx=5, pady=5)
-        self.save_warning_label = ttk.Label(
-            self.Save_settings_tab, text="Warning: Overwriting existing settings", foreground="red"
-        )
-        self.save_warning_label.grid_forget()  # Initially hidden
+        self.save_settings_button.grid(row=0, column=0, padx=5, pady=5)
 
-        self.load_settings_label = tk.Label(self.Save_settings_tab, text="Load:", font=("TkDefaultFont", 10))
-        self.load_settings_label.grid(row=1, column=0, padx=5, pady=5)
-
-        self.load_settings_textfield = ttk.Entry(self.Save_settings_tab)
-        self.load_settings_textfield.grid(row=1, column=1, padx=5, pady=5)
 
         self.load_settings_button = ttk.Button(
-            self.Save_settings_tab, text="Load From File", command=self.load_from_file_path_click
+            self.Save_settings_tab, text="Load From File", command=self.load_from_json
         )
-        self.load_settings_button.grid(row=1, column=2, padx=5, pady=5)
-
-        self.clear_settings_button = ttk.Button(
-            self.Save_settings_tab, text="Clear File", command=self.clear_file_path_click
-        )
-        if self.settings:
-            self.clear_settings_button.grid(row=2, column=1, columnspan=3, padx=5, pady=5)
-        else:
-            self.clear_settings_button.grid_forget()
+        self.load_settings_button.grid(row=1, column=0, padx=5, pady=5)
 
         self.error_text_label = ttk.Label(self.master, text="", foreground="red")
         self.error_text_label.grid(row=1, column=1, sticky="e", padx=5, pady=5)
@@ -271,7 +247,9 @@ class PrefPhraseController:
         regex = self.end_phrase_textfield.get()
         if dataName or regex:
             print(dataName+": + "+regex)
-            self.regexPairs.append((dataName,regex))
+            self.regex_as_text.append((dataName, regex.strip()))
+            regex = re.compile(regex.strip(), re.MULTILINE)
+            self.regexPairs.append((dataName, regex))
             self.data_replace_listbox.insert("end",dataName+": + "+regex)
             self.start_phrase_textfield.delete(0, tk.END)
             self.end_phrase_textfield.delete(0, tk.END)
@@ -319,157 +297,65 @@ class PrefPhraseController:
 
     def save_to_file_path_click(self):
         print("save_to_file_path_click clicked")
-        if self.save_settings_textfield.get() and self.confirm_save == 0:
+        if self.confirm_save == 0:
             self.confirm_save = 1
             messagebox.showerror("Warning!", "Warning! there is text in save box. pushing save one more time will overwrite the data to that location")
-        elif self.save_settings_textfield.get() and self.confirm_save == 1:
+        elif self.confirm_save == 1:
             self.confirm_save = 0
-            self.save_to_file()
-        else:
-            filetypes = (("txt files", "*.txt"), ("all files", "*.*"))
-            self.settings = filedialog.askopenfilename(title="Open a file", initialdir="/", filetypes=filetypes)
-            if self.settings:
-                self.save_settings_textfield.delete(0, tk.END)
-                self.load_settings_textfield.delete(0, tk.END)
-                self.save_settings_textfield.insert(0, self.settings)
-                self.load_settings_textfield.insert(0, self.settings)
-                self.confirm_save = 0
-                self.save_to_file()
-                self.clear_settings_button.grid(row=2, column=1, columnspan=3, padx=5, pady=5)
+            self.save_to_json()
 
-    def load_from_file_path_click(self):
-        print("on_path_to_csv_click clicked")
-        if self.load_settings_textfield.get():
-            self.load_from_file()
-        else:
-            filetypes = (("txt files", "*.txt"), ("all files", "*.*"))
-            self.settings = filedialog.askopenfilename(title="Open a file", initialdir="/", filetypes=filetypes)
-            if self.settings:
-                self.save_settings_textfield.delete(0, tk.END)
-                self.load_settings_textfield.delete(0, tk.END)
-                self.save_settings_textfield.insert(0, self.settings)
-                self.load_settings_textfield.insert(0, self.settings)
-                self.load_from_file()
-                self.clear_settings_button.grid(row=2, column=1, columnspan=3, padx=5, pady=5)
 
-    def clear_file_path_click(self):
-        print("clear_file_path_click clicked")
-        self.save_settings_textfield.delete(0, tk.END)
-        self.load_settings_textfield.delete(0, tk.END)
-        self.settings = ""
-        self.clear_settings_button.grid_forget()
-
-    def save_to_file(self):
-        print("saving")
+    def save_to_json(self):
+        data = {
+            "Export to CSV": [bool(self.export_csv_flag),self.export_csv],
+            "Export to App": [bool(self.export_app_flag), self.app_path],
+            "Regex pairs": self.regex_as_text,
+            "Data Replace Pairs":self.dataReplacePairs
+        }
         try:
-            text_to_export = ""
-            with open(self.settings, "w") as file_writer:  # Use 'with' for automatic file closing
-                text_to_export += "Settings for Preference page: \n"
-                text_to_export += "------------------------------Export Settings:------------------------------ \n"
-                text_to_export += "                              -Export to CSV-                                \n"
-                text_to_export += "Checked: \n"
-                text_to_export += str(self.export_csv_flag.get()) + "\n"  # Assuming these are Tkinter variables
-                text_to_export += "CSV filepath and name: \n"
-                text_to_export += self.export_to_csv_filename_textfield.get() + "\n"
-                text_to_export += "                              -Export to App-                                \n"
-                text_to_export += "Checked: \n"
-                text_to_export += str(self.export_app_flag.get()) + "\n"
-                text_to_export += "App filepath: \n"
-                text_to_export += self.app_path + "\n"  # Assuming appPath is a string
-                text_to_export += "----------------------------Data Export Settings:---------------------------- \n"
-                text_to_export += "                                -Data Sweep-                                  \n"
-                text_to_export += "Search terms: \n"
-                index = 0
-                for data_name, regex_exp in self.regexPairs:
-                    text_to_export += data_name+": "+self.regex_as_text[index] + "\n"
-                    index +=1
-                text_to_export += "                              -Data Replace-                                \n"
-                text_to_export += "Replace Phrases \n"
-                for data_start, data_end in self.dataReplacePairs:
-                    text_to_export += data_start + " -> " + data_end + "\n"
-                text_to_export += "---------------------------Save Settings to File:--------------------------- \n"
-                text_to_export += "File path and name: \n"
-                text_to_export += self.settings + "\n"  # Assuming Settings is a string
+            with open(self.settings, 'w') as f:
+                json.dump(data, f, indent=4)  # indent for readability
+            print(f"Data successfully saved to {self.settings}")
+        except Exception as e:
+            print(f"Error saving data to {self.settings}: {e}")
 
-                file_writer.write(text_to_export)
-
-        finally:
-            file_writer.close()
-
-    def load_from_file(self):
-        print("loading")
+    def load_from_json(self):
+        self.data_replace_listbox.delete(0, tk.END)
+        self.data_sweep_listbox.delete(0, tk.END)
         try:
-            with open(self.settings, "r") as file_reader:  # Use 'with' for automatic file closing
-                # Skip header lines and check if empty
-                if not file_reader.readline():
-                    messagebox.showerror("Error", "Error settings empty!")
-                    return
-                file_reader.readline()
+            with open(self.settings, 'r') as openfile:
+                # Reading from json file
+                json_object = json.load(openfile)
 
-                # --- Export to CSV ---
-                for _ in range(2):
-                    file_reader.readline()
-                csv_setting = file_reader.readline().strip().lower() == "true"
-                self.export_csv_flag.set(csv_setting)  # Assuming these are Tkinter variables
-                self.on_export_to_csv_toggle_click()
+            self.export_csv_flag.set(json_object["Export to CSV"][0])  # Assuming these are Tkinter variables
+            self.on_export_to_csv_toggle_click()
+            self.export_csv = json_object["Export to CSV"][1]
+            self.export_to_csv_filename_textfield.delete(0, tk.END)
+            self.export_to_csv_filename_textfield.insert(0, self.export_csv)
 
-                file_reader.readline()
-                csv_path_load = file_reader.readline().strip()
-                self.export_to_csv_filename_textfield.delete(0, tk.END)
-                self.export_to_csv_filename_textfield.insert(0, csv_path_load)
-                self.export_csv = csv_path_load
+            self.export_app_flag.set(json_object["Export to App"][0])  # Assuming these are Tkinter variables
+            self.on_export_to_app_toggle_click()
+            self.app_path = json_object["Export to App"][1]
+            self.app_path_textfield.delete(0, tk.END)
+            self.app_path_textfield.insert(0, self.app_path)
 
-                # --- Export to App ---
-                for _ in range(2):
-                    file_reader.readline()
-                app_setting = file_reader.readline().strip().lower() == "true"
-                self.export_app_flag.set(app_setting)
-                self.on_export_to_app_toggle_click()
+            self.regex_as_text = json_object["Regex pairs"]
+            for data, regex in self.regex_as_text:
+                self.data_replace_listbox.insert("end", data + ": + " + regex)
+                regex = re.compile(regex.strip(), re.MULTILINE)
+                self.regexPairs.append((data, regex))
 
-                file_reader.readline()
-                app_path_load = file_reader.readline().strip()
-                if "null" in app_path_load:
-                    self.app_path_textfield.delete(0, tk.END)
-                    self.app_path = ""
-                else:
-                    self.app_path_textfield.delete(0, tk.END)
-                    self.app_path_textfield.insert(0, app_path_load)
-                    self.app_path = app_path_load
-
-                # --- Data Export Settings ---
-                for _ in range(3):
-                    file_reader.readline()
-                while True:
-                    data = file_reader.readline().strip()
-                    if "-Data Replace-" in data:
-                        break
-                    start, end = data.split(": ",1)
-                    regex = re.compile(end.strip(),re.MULTILINE)
-                    self.regex_as_text.append(end.strip())
-                    self.regexPairs.append((start, regex))
-                    self.data_replace_listbox.insert("end", start + ": " + end.strip())
-
-                file_reader.readline()
-                while True:
-                    data = file_reader.readline().strip()
-                    if "-Save Settings to File:-" in data:
-                        break
-                    start, end = data.split(" -> ",1)
-                    self.dataReplacePairs.append((start, end))
-                    self.data_sweep_listbox.insert("end", start + " -> " + end)
-
-                # --- Save Settings to File ---
-                file_reader.readline()
-                settings_path_load = file_reader.readline().strip()
-                self.settings = settings_path_load
-                self.save_settings_textfield.delete(0, tk.END)
-                self.load_settings_textfield.delete(0, tk.END)
-                self.save_settings_textfield.insert(0, self.settings)
-                self.load_settings_textfield.insert(0, self.settings)
-
+            self.dataReplacePairs = json_object["Data Replace Pairs"]
+            for start,end in self.dataReplacePairs:
+                self.data_sweep_listbox.insert("end", start + " -> " + end)
 
         except Exception as e:
-            print("Load settings failed")
+            print(f"An unexpected error occurred loading {openfile}: {e}")
+            messagebox.showerror("Error!",
+                                 "File not loaded. Please make sure there is a setting.json file")
+        finally:
+            openfile.close()
+
 
     def confirm_click(self):
         # Get the data you want to pass
@@ -490,16 +376,3 @@ class PrefPhraseController:
 
     def cancel_click(self):
         self.master.destroy()
-
-    def is_valid_path(self, path):
-        try:
-            return os.path.exists(path)
-        except (TypeError, ValueError):
-            return False
-
-    def rename_file(self, old_path_string, new_path_string, file_changed):
-        try:
-            os.rename(old_path_string, new_path_string)
-            file_changed = new_path_string
-        except OSError:
-            self.print_error("Rename file error")
