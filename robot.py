@@ -1,17 +1,31 @@
 import os.path
 import subprocess
 import time
+from tkinter import messagebox
+
 import pyautogui
 import psutil
 from difflib import SequenceMatcher
 import numpy as np
 import pyperclip
+import keyboard
+import tkinter as tk
 
 from pathlib import Path
 
 
 class Robot:
-    def __init__(self,pdf_viewer_app):
+    def __init__(self,master,pdf_viewer_app):
+        self.master = master
+        self.master.title("Patients added")
+
+        self.text_frame = tk.Frame(self.master)
+        self.text_scroll = tk.Scrollbar(self.text_frame)
+        self.text_scroll.pack(side="right", fill="y")
+        self.text_area = tk.Text(self.text_frame, yscrollcommand=self.text_scroll.set)
+        self.text_area.pack(fill="both", expand=True)
+        self.text_scroll.config(command=self.text_area.yview)
+
         self.pdf_viewer_app = pdf_viewer_app
         self.app_path = pdf_viewer_app.app_path
         self.filename = os.path.basename(pdf_viewer_app.app_path)
@@ -21,9 +35,12 @@ class Robot:
         self.png_locations = {}
         self.clipboard = ""
         self.pdf_viewer_app = pdf_viewer_app
+        self.stop_typing = False  # flag to stop typing
 
         self.start_application()
         self.load_locations()
+
+        keyboard.add_hotkey('ctrl+q', self.stop_typing_func)
 
 
         print(self.png_locations)
@@ -34,14 +51,33 @@ class Robot:
                 return True
         return False
 
-    def create_new_patients(self):
-        for person in self.pdf_viewer_app.people:
-            self.person = person
-            self.type_patient_info()
-            self.type_insurance()
+    def stop_typing_func(self):
+        print("Hotkey pressed. Stopping typing.")
+        raise CustomError("Keyboard stop")
 
-            self.finish_patient()
-            person["Chart Number"] = self.clipboard
+    def create_new_patients(self):
+        self.text_area.insert(tk.END, "Adding data to App. Press Ctrl+Q to kill process.\n")
+        try:
+            for person in self.pdf_viewer_app.people:
+                self.person = person
+                self.text_area.insert(tk.END, "Adding: "+str(person)+"\n")
+                self.text_area.see(tk.END)
+
+                self.type_patient_info()
+                self.type_insurance()
+                self.finish_patient()
+                person["Chart Number"] = self.clipboard
+
+                self.text_area.insert(tk.END, "Finished: " + str(self.clipboard)+"\n")
+                self.text_area.see(tk.END)
+
+            messagebox.showerror("Complete!", "All data entered with no error. Please close this window and the log window")
+        except CustomError as e:
+            self.text_area.insert(tk.END, "Process killed with keyboard. Closing this window in 3 seconds"+"\n")
+            self.text_area.see(tk.END)
+            print("stopping process")
+            time.sleep(3)
+            self.master.destroy()
 
     def type_patient_info(self):
         try:
@@ -77,7 +113,7 @@ class Robot:
 
             pyautogui.click(self.png_locations["PostCodeBox"][0] + 40, self.png_locations["PostCodeBox"][1])
             pyautogui.write(self.person["Address"][3].upper())
-        except:
+        except KeyError as e:
             pyautogui.click(self.png_locations["StreetAddressBox"][0] + 40, self.png_locations["StreetAddressBox"][1])
             pyautogui.write(self.person["Address (Apt)"][0].upper())
 
@@ -97,7 +133,7 @@ class Robot:
         try:
             pyautogui.click(self.png_locations["PhoneBox"][0] + 40, self.png_locations["PhoneBox"][1])
             pyautogui.write(self.person["Phone"][0])
-        except Exception as e:
+        except KeyError as e:
             print("no phone")
 
         pyautogui.click(self.png_locations["GenderBox"][0] + 40, self.png_locations["GenderBox"][1])
@@ -283,3 +319,12 @@ class Robot:
         pyautogui.mouseUp()
 
         time.sleep(2)
+
+class CustomError(Exception):
+    """A custom exception class."""
+    def __init__(self, message="A custom error occurred"):
+        self.message = message
+        super().__init__(self.message)  # Initialize the base class
+
+    def __str__(self):
+        return f"CustomError: {self.message}"

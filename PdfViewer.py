@@ -1,4 +1,5 @@
 import re
+import threading
 import tkinter as tk
 import difflib
 import csv
@@ -91,7 +92,6 @@ class APP:
             self.pdf_content_label.pack(fill="both", expand=True)
         else:
             # Create the tkPDFViewer and place it INSIDE the frame
-
             # Adding pdf location and width and height.
             self.pdfView = self.showPDF.pdf_view(self.center_pane,
                              pdf_location=self.activePDF,
@@ -347,8 +347,13 @@ class APP:
         if self.people:
             if self.app_flag:
                 print("Exporting to App")
-                robot = Robot(self)
-                robot.create_new_patients()
+                add_patient_info_window = tk.Toplevel(self.root)
+                robot = Robot(add_patient_info_window, self)
+
+                thread = threading.Thread(target=robot.create_new_patients())
+                thread.start()
+                print("Patient creation started. Press Ctrl+Q to stop.")
+                thread.join()
             if self.csv_flag:
                 print("Exporting to CSV")
                 self.write_dict_list_to_csv(self.people)

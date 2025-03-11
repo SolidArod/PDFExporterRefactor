@@ -248,9 +248,9 @@ class PrefPhraseController:
         if dataName or regex:
             print(dataName+": + "+regex)
             self.regex_as_text.append((dataName, regex.strip()))
+            self.data_replace_listbox.insert("end", dataName + ": " + regex)
             regex = re.compile(regex.strip(), re.MULTILINE)
             self.regexPairs.append((dataName, regex))
-            self.data_replace_listbox.insert("end",dataName+": + "+regex)
             self.start_phrase_textfield.delete(0, tk.END)
             self.end_phrase_textfield.delete(0, tk.END)
         else:
@@ -266,6 +266,7 @@ class PrefPhraseController:
                 selected_item = selected_item - offset
                 self.data_replace_listbox.delete(selected_item)
                 self.regexPairs.pop(selected_item)
+                self.regex_as_text.pop(selected_item)
                 print(selected_item)
                 offset += 1
 
@@ -306,6 +307,8 @@ class PrefPhraseController:
 
 
     def save_to_json(self):
+        self.export_csv = self.export_to_csv_filename_textfield.get()
+        self.app_path = self.app_path_textfield.get()
         data = {
             "Export to CSV": [bool(self.export_csv_flag),self.export_csv],
             "Export to App": [bool(self.export_app_flag), self.app_path],
