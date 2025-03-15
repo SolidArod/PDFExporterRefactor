@@ -146,7 +146,7 @@ class APP:
 
     def onAddPdfButtonClick(self):
         # Function to handle adding a PDF file
-        print("Add PDF button clicked")
+        # print("Add PDF button clicked")
         filetypes = (("PDF files", "*.pdf"), ("all files", "*.*"))
         file = filedialog.askopenfilename(title="Open a file", initialdir="/", filetypes=filetypes)
         if file:
@@ -160,19 +160,19 @@ class APP:
             self.setPDFView(self.activePDF)
             self.openRecentMenuItem.entryconfig(0,label=self.prevPDF)
             self.people = []
-            #print("Selected file:", file)
+            ## print("Selected file:", file)
 
     def on_filesList_select(self,event):
-        print("Select event")
+        # print("Select event")
         selection = self.filesList.curselection()
         if selection:  # Check if anything is selected
             selected_item = self.filesList.get(selection[0])  # Get the string value
-            print("Selected item:", selected_item)
-            print("Active item:", self.activePDF)
+            # print("Selected item:", selected_item)
+            # print("Active item:", self.activePDF)
             # Or do something else with the selected item(s)
             matcher = difflib.SequenceMatcher(None, self.activePDF, selected_item)
             # ratio = matcher.ratio()
-            print(matcher.ratio())
+            # print(matcher.ratio())
             if matcher.ratio() < 0.95:
                 self.prevPDF = self.activePDF
                 self.activePDF = selected_item
@@ -180,7 +180,8 @@ class APP:
                 self.people = []
 
         else:
-            print("ERROR: Nothing Selected")
+            pass
+            # print("ERROR: Nothing Selected")
 
     def setPDFView(self,pdfPath):
         self.pdf_content_label.pack_forget()
@@ -207,7 +208,7 @@ class APP:
 
     def onOpenRecentMenuItemClick(self):
         # Function to handle opening a recent file
-        print("Open Recent menu item clicked")
+        # print("Open Recent menu item clicked")
         self.setPDFView(self.prevPDF)
         self.filesList.selection_clear(0, tk.END)
         self.filesList.selection_set(self.filesList.get(0,tk.END).index(self.prevPDF))
@@ -220,7 +221,7 @@ class APP:
 
     def onPrefClick(self):
         # Function to handle opening preferences
-        print("Preferences menu item clicked")
+        # print("Preferences menu item clicked")
         # Create the settings window
         settings_window = tk.Toplevel(self.root)
         pref_controller = PrefPhraseController(settings_window, self)
@@ -229,9 +230,9 @@ class APP:
 
     def update_from_settings(self, data):
         """Updates the PdfViewer with data from the settings."""
-        print("Export_Csv: " + self.export_csv)
-        print("App_path: " + self.app_path)
-        print("Settings: " + self.settings)
+        # print("Export_Csv: " + self.export_csv)
+        # print("App_path: " + self.app_path)
+        # print("Settings: " + str(self.settings))
 
         self.export_csv = data["export_csv"]
         self.csv_flag = data["csv_flag"]
@@ -241,19 +242,19 @@ class APP:
         self.regex_pairs = data["regex pairs"]
         self.data_replace_pairs = data["data Replace Pairs"]
 
-        print("Export_Csv: " + self.export_csv)
-        print("App_path: " + self.app_path)
-        print("Settings: " + str(self.settings))
-        print("Regex pairs:")
-        for data_name, regex_exp in self.regex_pairs:
-            print(data_name + ": "+str(regex_exp))
-        print("Data Replace")
-        for data_name, data_end in self.data_replace_pairs:
-            print(data_name + " -> " + data_end)
+        # print("Export_Csv: " + self.export_csv)
+        # print("App_path: " + self.app_path)
+        # print("Settings: " + str(self.settings))
+        # print("Regex pairs:")
+        # for data_name, regex_exp in self.regex_pairs:
+            # print(data_name + ": "+str(regex_exp))
+        # print("Data Replace")
+        # for data_name, data_end in self.data_replace_pairs:
+            # print(data_name + " -> " + data_end)
 
     def onDeleteFileClick(self):
         # Function to handle deleting a file
-        print("Delete menu item clicked")
+        # print("Delete menu item clicked")
         selection = self.filesList.curselection()
         offset = 0
         if selection:  # Check if anything is selected
@@ -268,17 +269,17 @@ class APP:
                     self.pdf_content_label.pack(fill="both", expand=True)
                 self.filesList.delete(selected_item)
                 self.files.pop(selected_item)
-                print(selected_item)
+                # print(selected_item)
                 offset += 1
 
     def onSelectAllClick(self):
         # Function to handle selecting all files
-        print("Select All menu item clicked")
+        # print("Select All menu item clicked")
         self.filesList.select_set(0, tk.END)
 
     def onUnselectAllClick(self):
         # Function to handle unselecting all files
-        print("Unselect All menu item clicked")
+        # print("Unselect All menu item clicked")
         self.filesList.selection_clear(0, tk.END)
         self.filesList.selection_set(self.filesList.get(0, tk.END).index(self.activePDF))
 
@@ -286,7 +287,7 @@ class APP:
         # Function to handle text tab change
         selected_tab = event.widget.select()
         tab_id = event.widget.index(selected_tab)
-        print(f"Tab {tab_id + 1} clicked!")
+        # print(f"Tab {tab_id + 1} clicked!")
         if tab_id == 1:
             if not self.regex_pairs and not self.files:
                 self.simplified_text_area.delete("1.0", tk.END)
@@ -343,21 +344,36 @@ class APP:
 
     def onExportClick(self):
         # Function to handle export click
-        print("Export button clicked")
+        # print("Export button clicked")
         if self.people:
             if self.app_flag:
-                print("Exporting to App")
+                # print("Exporting to App")
                 add_patient_info_window = tk.Toplevel(self.root)
-                robot = Robot(add_patient_info_window, self)
+                add_patient_info_window.title("Patients added")
+                text_frame = tk.Frame(add_patient_info_window)
+                text_frame.pack(fill=tk.BOTH, expand=True)
+
+                text_area = tk.Text(text_frame, wrap=tk.WORD, state=tk.NORMAL)
+                text_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+                text_scroll = tk.Scrollbar(text_frame, command=text_area.yview)
+                text_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+                text_area.config(yscrollcommand=text_scroll.set)
+
+                text_area.wait_visibility()
+
+                robot = Robot(text_area, self)
 
                 thread = threading.Thread(target=robot.create_new_patients())
                 thread.start()
-                print("Patient creation started. Press Ctrl+Q to stop.")
+                # print("Patient creation started. Press Ctrl+Q to stop.")
                 thread.join()
+                add_patient_info_window.after(3000, add_patient_info_window.destroy)
+
             if self.csv_flag:
-                print("Exporting to CSV")
+                # print("Exporting to CSV")
                 self.write_dict_list_to_csv(self.people)
-            print(self.people)
+            # print(self.people)
         else:
             messagebox.showerror("Warning!","Please load a pdf or check preferences")
 
@@ -384,14 +400,14 @@ class APP:
                         writer.writerow(row)
 
         except Exception as e:
-            print(f"An error ocurred writing into the file: {e}")
+            # print(f"An error ocurred writing into the file: {e}")
             raise
         finally:
             csvfile.close()
 
     def onAboutMenuItemClick(self):
         # Function to handle About menu item click
-        print("About button clicked")
+        # print("About button clicked")
         # Create the settings window
         about_window = tk.Toplevel(self.root)
         about_window.title("about")

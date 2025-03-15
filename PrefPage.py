@@ -228,25 +228,25 @@ class PrefPhraseController:
             self.app_path_textfield.grid_forget()
 
     def on_path_to_csv_click(self):
-        print("on_path_to_csv_click clicked")
+        # print("on_path_to_csv_click clicked")
         filetypes = (("csv files", "*.csv"),("txt files", "*.txt"), ("all files", "*.*"))
         self.export_csv = filedialog.askopenfilename(title="Open a file", initialdir="/", filetypes=filetypes)
         self.export_to_csv_filename_textfield.delete(0, tk.END)
         self.export_to_csv_filename_textfield.insert(0, self.export_csv)
 
     def on_path_to_app_click(self):
-        print("on_path_to_app_click clicked")
+        # print("on_path_to_app_click clicked")
         filetypes = (("EXE", "*.exe"), ("all files", "*.*"))
         self.app_path = filedialog.askopenfilename(title="Open a file", initialdir="/", filetypes=filetypes)
         self.app_path_textfield.delete(0, tk.END)
         self.app_path_textfield.insert(0, self.app_path)
 
     def regex_add_click(self):
-        print("regex add")
+        # print("regex add")
         dataName = self.start_phrase_textfield.get()
         regex = self.end_phrase_textfield.get()
         if dataName or regex:
-            print(dataName+": + "+regex)
+            # print(dataName+": + "+regex)
             self.regex_as_text.append((dataName, regex.strip()))
             self.data_replace_listbox.insert("end", dataName + ": " + regex)
             regex = re.compile(regex.strip(), re.MULTILINE)
@@ -258,7 +258,7 @@ class PrefPhraseController:
 
     def regex_remove_click(self):
         # Function to handle deleting a file
-        print("regex remove")
+        # print("regex remove")
         selection = self.data_replace_listbox.curselection()
         offset = 0
         if selection:  # Check if anything is selected
@@ -267,15 +267,15 @@ class PrefPhraseController:
                 self.data_replace_listbox.delete(selected_item)
                 self.regexPairs.pop(selected_item)
                 self.regex_as_text.pop(selected_item)
-                print(selected_item)
+                # print(selected_item)
                 offset += 1
 
     def dataRep_add_click(self):
-        print("data replace add")
+        # print("data replace add")
         dataPhrase = self.phrase_to_replace_textfield.get()
         dataResult = self.replace_phrase_result_textfield.get()
         if dataPhrase or dataResult:
-            print(dataPhrase + ": + " + dataResult)
+            # print(dataPhrase + ": + " + dataResult)
             self.dataReplacePairs.append((dataPhrase, dataResult))
             self.data_sweep_listbox.insert("end", dataPhrase + " -> " + dataResult)
             self.phrase_to_replace_textfield.delete(0, tk.END)
@@ -285,7 +285,7 @@ class PrefPhraseController:
 
     def dataRep_remove_click(self):
         # Function to handle deleting a file
-        print("data replace remove")
+        # print("data replace remove")
         selection = self.data_sweep_listbox.curselection()
         offset = 0
         if selection:  # Check if anything is selected
@@ -293,11 +293,11 @@ class PrefPhraseController:
                 selected_item = selected_item - offset
                 self.data_sweep_listbox.delete(selected_item)
                 self.dataReplacePairs.pop(selected_item)
-                print(selected_item)
+                # print(selected_item)
                 offset += 1
 
     def save_to_file_path_click(self):
-        print("save_to_file_path_click clicked")
+        # print("save_to_file_path_click clicked")
         if self.confirm_save == 0:
             self.confirm_save = 1
             messagebox.showerror("Warning!", "Warning! there is text in save box. pushing save one more time will overwrite the data to that location")
@@ -318,9 +318,11 @@ class PrefPhraseController:
         try:
             with open(self.settings, 'w') as f:
                 json.dump(data, f, indent=4)  # indent for readability
-            print(f"Data successfully saved to {self.settings}")
+            # print(f"Data successfully saved to {self.settings}")
         except Exception as e:
-            print(f"Error saving data to {self.settings}: {e}")
+            messagebox.showerror("Error!",
+                                 "Error saving to file please check file location and save again")
+            # print(f"Error saving data to {self.settings}: {e}")
 
     def load_from_json(self):
         self.data_replace_listbox.delete(0, tk.END)
@@ -353,7 +355,7 @@ class PrefPhraseController:
                 self.data_sweep_listbox.insert("end", start + " -> " + end)
 
         except Exception as e:
-            print(f"An unexpected error occurred loading {openfile}: {e}")
+            # print(f"An unexpected error occurred loading {openfile}: {e}")
             messagebox.showerror("Error!",
                                  "File not loaded. Please make sure there is a setting.json file")
         finally:
