@@ -225,7 +225,6 @@ class APP:
         # Create the settings window
         settings_window = tk.Toplevel(self.root)
         pref_controller = PrefPhraseController(settings_window, self)
-        #pref_controller.settings = "settings.txt"
         pref_controller.load_from_json()
 
     def update_from_settings(self, data):
@@ -348,27 +347,28 @@ class APP:
         if self.people:
             if self.app_flag:
                 # print("Exporting to App")
-                add_patient_info_window = tk.Toplevel(self.root)
-                add_patient_info_window.title("Patients added")
-                text_frame = tk.Frame(add_patient_info_window)
-                text_frame.pack(fill=tk.BOTH, expand=True)
+                #add_patient_info_window = tk.Toplevel(self.root)
+                #add_patient_info_window.title("Patients added")
+                #text_frame = tk.Frame(add_patient_info_window)
+                #text_frame.pack(fill=tk.BOTH, expand=True)
 
-                text_area = tk.Text(text_frame, wrap=tk.WORD, state=tk.NORMAL)
-                text_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+                #text_area = tk.Text(text_frame, wrap=tk.WORD, state=tk.NORMAL)
+                #text_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-                text_scroll = tk.Scrollbar(text_frame, command=text_area.yview)
-                text_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-                text_area.config(yscrollcommand=text_scroll.set)
+                #text_scroll = tk.Scrollbar(text_frame, command=text_area.yview)
+                #text_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+                #text_area.config(yscrollcommand=text_scroll.set)
 
-                text_area.wait_visibility()
+                #text_area.wait_visibility()
 
-                robot = Robot(text_area, self)
+                print("Patient creation started. Press Ctrl+Q to stop.")
+                robot = Robot(self)
+                robot.create_new_patients()
 
-                thread = threading.Thread(target=robot.create_new_patients())
-                thread.start()
-                # print("Patient creation started. Press Ctrl+Q to stop.")
-                thread.join()
-                add_patient_info_window.after(3000, add_patient_info_window.destroy)
+                # thread = threading.Thread(target=robot.create_new_patients())
+                # thread.start()
+                # thread.join()
+                # add_patient_info_window.after(3000, add_patient_info_window.destroy)
 
             if self.csv_flag:
                 # print("Exporting to CSV")

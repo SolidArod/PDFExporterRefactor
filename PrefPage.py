@@ -346,7 +346,7 @@ class PrefPhraseController:
 
             self.regex_as_text = json_object["Regex pairs"]
             for data, regex in self.regex_as_text:
-                self.data_replace_listbox.insert("end", data + ": + " + regex)
+                self.data_replace_listbox.insert("end", data + ": " + regex)
                 regex = re.compile(regex.strip(), re.MULTILINE)
                 self.regexPairs.append((data, regex))
 

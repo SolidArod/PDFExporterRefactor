@@ -15,14 +15,16 @@ from pathlib import Path
 
 
 class Robot:
-    def __init__(self,text_area,pdf_viewer_app):
-        self.text_area = text_area
+    def __init__(self,pdf_viewer_app):
+        #self.text_area = text_area
 
+        self.cmd = None
         self.pdf_viewer_app = pdf_viewer_app
         self.app_path = pdf_viewer_app.app_path
         self.filename = os.path.basename(pdf_viewer_app.app_path)
         self.script_dir = Path(__file__).parent
         self.png_folder = self.script_dir / "Screencaps"
+        # print("Png_folder: "+ str(self.png_folder))
         self.dir_to_list = list(self.png_folder.iterdir())
         self.png_locations = {}
         self.clipboard = ""
@@ -35,7 +37,7 @@ class Robot:
         self.start_application()
         self.load_locations()
 
-        #self.create_new_patients()
+        # self.create_new_patients()
 
         # print(self.png_locations)
 
@@ -47,25 +49,26 @@ class Robot:
         return False
 
     def stop_typing_func(self):
-        # print("Hotkey pressed. Stopping typing.")
+        print("Hotkey pressed. Stopping typing.")
         self.stop_typing = True  # Set the flag to True
 
     def cleanup_and_exit(self):
         """Helper function for graceful exit."""
-        self.text_area.insert(tk.END,
-                              "Process killed with keyboard. Closing this window in 3 seconds" + "\n")
-        self.text_area.see(tk.END)
-        # print("stopping process")
+        # self.text_area.insert(tk.END,
+        #                      "Process killed with keyboard. Closing this window in 3 seconds" + "\n")
+        # self.text_area.see(tk.END)
+        print("Process killed with keyboard")
 
     def create_new_patients(self):
-        self.text_area.insert(tk.END, "Adding data to App. Press Ctrl+Q to kill process.\n")
-        self.text_area.see(tk.END)
+        # self.text_area.insert(tk.END, "Adding data to App. Press Ctrl+Q to kill process.\n")
+        # self.text_area.see(tk.END)
 
         for person in self.pdf_viewer_app.people:
             # try: # Removed outer try-except.  Handle exception within the loop.
             self.person = person
-            self.text_area.insert(tk.END, "Adding: " + str(person) + "\n")
-            self.text_area.see(tk.END)
+            print("Adding: " + str(person))
+            # self.text_area.insert(tk.END, "Adding: " + str(person) + "\n")
+            # self.text_area.see(tk.END)
 
             # --- Check stop_typing flag *before* each major step ---
             if self.stop_typing:
@@ -92,8 +95,9 @@ class Robot:
 
             self.type_billing()
 
-            self.text_area.insert(tk.END, "Finished: " + str(self.clipboard) + "\n")
-            self.text_area.see(tk.END)
+            print("Finished: " + str(self.clipboard))
+            # self.text_area.insert(tk.END, "Finished: " + str(self.clipboard) + "\n")
+            # self.text_area.see(tk.END)
             if self.stop_typing:  # Check one last time after finish_patient
                 self.cleanup_and_exit()
                 return  # Exit function to not assign to Chart Number.
@@ -124,7 +128,7 @@ class Robot:
             if self.stop_typing: return
         except (KeyError, TypeError) as e:
             pass
-            # print("No middle name")
+            print("No middle name")
 
         try:
             pyautogui.click(self.png_locations["StreetAddressBox"][0] + 40,
@@ -174,7 +178,7 @@ class Robot:
             if self.stop_typing: return
         except KeyError as e:
             pass
-            # print("no phone")
+            print("no phone")
 
         pyautogui.click(self.png_locations["GenderBox"][0] + 40, self.png_locations["GenderBox"][1])
         pyautogui.write(self.person["Legal Sex"][0][0].upper())
@@ -280,7 +284,7 @@ class Robot:
                 if self.stop_typing: return
             except KeyError as e:
                 pass
-                # print("Ran out of insurances")
+                print("Ran out of insurances")
 
     def type_billing(self):
         time.sleep(2)
@@ -298,7 +302,7 @@ class Robot:
         # Click billing box and open the billing page
         pyautogui.click(self.png_locations["BillingBox"][0], self.png_locations["BillingBox"][1])
         pyautogui.press('f8')
-        time.sleep(0.5)
+        time.sleep(2)
         pyautogui.doubleClick(self.png_locations["BillingBox"][0] + 100, self.png_locations["BillingBox"][1],interval=0.2)
         time.sleep(3)
 
