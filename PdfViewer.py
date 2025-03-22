@@ -313,6 +313,8 @@ class APP:
                                             tupleEntry = tupleEntry.replace(start, end)
                                         if not tupleEntry.strip():
                                             tupleEntry = ""
+                                        if "Printed by" in str(tupleEntry):
+                                            tupleEntry = ""
                                         personData.append(tupleEntry)
                                 else:
                                     for start, end in self.data_replace_pairs:
@@ -362,8 +364,11 @@ class APP:
                 #text_area.wait_visibility()
 
                 print("Patient creation started. Press Ctrl+Q to stop.")
-                robot = Robot(self)
-                robot.create_new_patients()
+                try:
+                    robot = Robot(self)
+                    robot.create_new_patients()
+                except Exception as e:
+                    print(f"Exception occured during creation: {e}. Catching to make CSV")
 
                 # thread = threading.Thread(target=robot.create_new_patients())
                 # thread.start()

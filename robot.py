@@ -460,8 +460,12 @@ class Robot:
     def start_application(self):
         if self.check_if_process_running(self.filename):
             # data = pyautogui.getWindowsWithTitle("TotalMD")
-            self.np = pyautogui.getWindowsWithTitle(self.filename[:-4])[0].activate()
-            time.sleep(2)
+            try:
+                self.np = pyautogui.getWindowsWithTitle(self.filename[:-4])[0].activate()
+                time.sleep(2)
+            except Exception as e:
+                print(self.filename[:-4]+" is running but not selectable please kill "+self.filename[:-4]+" process in Task Manager")
+                raise Exception("Error grabbing app")
         else:
             self.proc = subprocess.Popen([self.app_path, ])
             time.sleep(4)
