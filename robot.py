@@ -76,6 +76,7 @@ class Robot:
         self.pdf_viewer_app = pdf_viewer_app
         self.stop_typing = False  # flag to stop typing
         self.billing_loaded = False
+        self.retryCount = 0
 
 
         keyboard.add_hotkey('ctrl+q', self.stop_typing_func)
@@ -132,12 +133,12 @@ class Robot:
 
             self.type_billing()
 
-            print("Finished: " + str(self.clipboard))
+            print("Finished: " + str(self.person["Chart Number"]))
             if self.stop_typing:  # Check one last time after finish_patient
                 print("Process killed with keyboard")
                 return  # Exit function to not assign to Chart Number.
 
-        print("Finished: " + str(self.clipboard))
+        print("Finished: " + str(self.person["Chart Number"]))
         #messagebox.showerror("Complete!", "All data entered with no error. Please close this window and the log window")
 
 
@@ -150,78 +151,110 @@ class Robot:
             time.sleep(3.5)
             if self.stop_typing: return
 
-            pyautogui.click(self.png_locations["FirstNameBox"][0] + 40, self.png_locations["FirstNameBox"][1] + 10)
-            pyautogui.write(self.person["Legal Name"][1].upper())
+            self.type_and_verify(self.png_locations["FirstNameBox"][0] + 40,self.png_locations["FirstNameBox"][1] + 10,
+                                 self.person["Legal Name"][1].upper())
+            #pyautogui.click(self.png_locations["FirstNameBox"][0] + 40, self.png_locations["FirstNameBox"][1] + 10)
+            #pyautogui.write(self.person["Legal Name"][1].upper())
             if self.stop_typing: return
 
-            pyautogui.click(self.png_locations["LastNameBox"][0] + 40, self.png_locations["LastNameBox"][1])
-            pyautogui.write(self.person["Legal Name"][0].upper())
+            self.type_and_verify(self.png_locations["LastNameBox"][0] + 40, self.png_locations["LastNameBox"][1],
+                                 self.person["Legal Name"][0].upper())
+            #pyautogui.click(self.png_locations["LastNameBox"][0] + 40, self.png_locations["LastNameBox"][1])
+            #pyautogui.write(self.person["Legal Name"][0].upper())
             if self.stop_typing: return
 
-            pyautogui.click(self.png_locations["MiddleInitalBox"][0] + 40, self.png_locations["MiddleInitalBox"][1])
-            pyautogui.write(self.person["Legal Name"][2].upper())
+            self.type_and_verify(self.png_locations["MiddleInitalBox"][0] + 40, self.png_locations["MiddleInitalBox"][1],
+                                 self.person["Legal Name"][2].upper())
+            #pyautogui.click(self.png_locations["MiddleInitalBox"][0] + 40, self.png_locations["MiddleInitalBox"][1])
+            #pyautogui.write(self.person["Legal Name"][2].upper())
             if self.stop_typing: return
         except (KeyError, TypeError) as e:
             pass
             print("No middle name")
-
-        try:
-            pyautogui.click(self.png_locations["StreetAddressBox"][0] + 40,
-                            self.png_locations["StreetAddressBox"][1])
-            pyautogui.write(self.person["Address"][0].upper())
             if self.stop_typing: return
 
+        try:
+            self.type_and_verify(self.png_locations["StreetAddressBox"][0] + 40,self.png_locations["StreetAddressBox"][1],
+                                 self.person["Address"][0].upper())
+            #pyautogui.click(self.png_locations["StreetAddressBox"][0] + 40,
+            #                self.png_locations["StreetAddressBox"][1])
+            #pyautogui.write(self.person["Address"][0].upper())
+            if self.stop_typing: return
+
+            #self.type_and_verify(self.png_locations["CityBox"][0] + 40, self.png_locations["CityBox"][1],
+            #                     self.person["Address"][1].upper())
             pyautogui.click(self.png_locations["CityBox"][0] + 40, self.png_locations["CityBox"][1])
             pyautogui.write(self.person["Address"][1].upper())
             pyautogui.press('enter')
             if self.stop_typing: return
 
+            #self.type_and_verify(self.png_locations["StateBox"][0] + 40, self.png_locations["StateBox"][1],
+            #                     self.person["Address"][2].upper())
             pyautogui.doubleClick(self.png_locations["StateBox"][0] + 40, self.png_locations["StateBox"][1],
                                   interval=0.2)
             pyautogui.write(self.person["Address"][2].upper())
             if self.stop_typing: return
 
+            #self.type_and_verify(self.png_locations["PostCodeBox"][0] + 40, self.png_locations["PostCodeBox"][1],
+            #                     self.person["Address"][3].upper())
             pyautogui.click(self.png_locations["PostCodeBox"][0] + 40, self.png_locations["PostCodeBox"][1])
             pyautogui.write(self.person["Address"][3].upper())
             if self.stop_typing: return
         except KeyError as e:
-            pyautogui.click(self.png_locations["StreetAddressBox"][0] + 40,
-                            self.png_locations["StreetAddressBox"][1])
-            pyautogui.write(self.person["Address (Apt)"][0].upper())
+            self.type_and_verify(self.png_locations["StreetAddressBox"][0] + 40,self.png_locations["StreetAddressBox"][1],
+                                 self.person["Address (Apt)"][0].upper())
+            #pyautogui.click(self.png_locations["StreetAddressBox"][0] + 40,
+            #                self.png_locations["StreetAddressBox"][1])
+            #pyautogui.write(self.person["Address (Apt)"][0].upper())
             if self.stop_typing: return
 
-            pyautogui.click(self.png_locations["AptBox"][0] + 40, self.png_locations["AptBox"][1] + 20)
-            pyautogui.write(self.person["Address (Apt)"][1].upper())
+            self.type_and_verify(self.png_locations["AptBox"][0] + 40, self.png_locations["AptBox"][1] + 20,
+                                 self.person["Address (Apt)"][1].upper())
+            #pyautogui.click(self.png_locations["AptBox"][0] + 40, self.png_locations["AptBox"][1] + 20)
+            #pyautogui.write(self.person["Address (Apt)"][1].upper())
             if self.stop_typing: return
 
+            #self.type_and_verify(self.png_locations["CityBox"][0] + 40, self.png_locations["CityBox"][1],
+            #                     self.person["Address (Apt)"][2].upper())
             pyautogui.click(self.png_locations["CityBox"][0] + 40, self.png_locations["CityBox"][1])
             pyautogui.write(self.person["Address (Apt)"][2].upper())
             pyautogui.press('enter')
             if self.stop_typing: return
 
+            #self.type_and_verify(self.png_locations["StateBox"][0] + 40, self.png_locations["StateBox"][1],
+            #                     self.person["Address (Apt)"][3].upper())
             pyautogui.click(self.png_locations["StateBox"][0] + 40, self.png_locations["StateBox"][1])
             pyautogui.write(self.person["Address (Apt)"][3].upper())
             if self.stop_typing: return
 
+            #self.type_and_verify(self.png_locations["PostCodeBox"][0] + 40, self.png_locations["PostCodeBox"][1],
+            #                     self.person["Address (Apt)"][4].upper())
             pyautogui.click(self.png_locations["PostCodeBox"][0] + 40, self.png_locations["PostCodeBox"][1])
             pyautogui.write(self.person["Address (Apt)"][4].upper())
             if self.stop_typing: return
 
         try:
-            pyautogui.click(self.png_locations["PhoneBox"][0] + 40, self.png_locations["PhoneBox"][1])
-            pyautogui.write(self.person["Phone"][0])
+            self.type_and_verify(self.png_locations["PhoneBox"][0] + 40, self.png_locations["PhoneBox"][1],
+                                 self.person["Phone"][0])
+            #pyautogui.click(self.png_locations["PhoneBox"][0] + 40, self.png_locations["PhoneBox"][1])
+            #pyautogui.write(self.person["Phone"][0])
             if self.stop_typing: return
         except KeyError as e:
             pass
             print("no phone")
+            if self.stop_typing: return
 
+        #self.type_and_verify(self.png_locations["GenderBox"][0] + 40, self.png_locations["GenderBox"][1],
+        #                     self.person["Legal Sex"][0][0].upper())
         pyautogui.click(self.png_locations["GenderBox"][0] + 40, self.png_locations["GenderBox"][1])
         pyautogui.write(self.person["Legal Sex"][0][0].upper())
         pyautogui.press('enter')
         if self.stop_typing: return
 
-        pyautogui.click(self.png_locations["DOBBox"][0], self.png_locations["DOBBox"][1])
-        pyautogui.write(self.person["Date of Birth"][0])
+        self.type_and_verify(self.png_locations["DOBBox"][0], self.png_locations["DOBBox"][1],
+                             self.person["Date of Birth"][0])
+        #pyautogui.click(self.png_locations["DOBBox"][0], self.png_locations["DOBBox"][1])
+        #pyautogui.write(self.person["Date of Birth"][0])
         if self.stop_typing: return
 
 
@@ -230,6 +263,8 @@ class Robot:
         if self.stop_typing: return
 
         try:
+            #self.type_and_verify(self.png_locations["InsuranceNameBox"][0][0] + 40,self.png_locations["InsuranceNameBox"][0][1],
+            #                     self.person["Insurance"][0])
             pyautogui.click(self.png_locations["InsuranceNameBox"][0][0] + 40,
                             self.png_locations["InsuranceNameBox"][0][1])
             pyautogui.write(self.person["Insurance"][0])
@@ -237,19 +272,25 @@ class Robot:
             pyautogui.sleep(0.2)
             if self.stop_typing: return
 
-            pyautogui.click(self.png_locations["PolicyIDBox"][0][0] + 50, self.png_locations["PolicyIDBox"][0][1])
-            pyautogui.write(self.person["Insurance"][3])
-            pyautogui.press('enter')
-            pyautogui.sleep(0.2)
+            self.type_and_verify(self.png_locations["PolicyIDBox"][0][0] + 50, self.png_locations["PolicyIDBox"][0][1],
+                                 self.person["Insurance"][3])
+            #pyautogui.click(self.png_locations["PolicyIDBox"][0][0] + 50, self.png_locations["PolicyIDBox"][0][1])
+            #pyautogui.write(self.person["Insurance"][3])
+            #pyautogui.press('enter')
+            #pyautogui.sleep(0.2)
             if self.stop_typing: return
 
-            pyautogui.click(self.png_locations["GroupNoBox"][0][0] + 50, self.png_locations["GroupNoBox"][0][1])
-            pyautogui.write(self.person["Insurance"][2])
-            pyautogui.press('enter')
-            pyautogui.sleep(0.2)
+            self.type_and_verify(self.png_locations["GroupNoBox"][0][0] + 50, self.png_locations["GroupNoBox"][0][1],
+                                 self.person["Insurance"][2])
+            #pyautogui.click(self.png_locations["GroupNoBox"][0][0] + 50, self.png_locations["GroupNoBox"][0][1])
+            #pyautogui.write(self.person["Insurance"][2])
+            #pyautogui.press('enter')
+            #pyautogui.sleep(0.2)
             if self.stop_typing: return
         except KeyError as e:
             try:
+                #self.type_and_verify(self.png_locations["InsuranceNameBox"][0][0] + 40,self.png_locations["InsuranceNameBox"][0][1],
+                #                     self.person["Insurance 0"][0])
                 pyautogui.click(self.png_locations["InsuranceNameBox"][0][0] + 40,
                                 self.png_locations["InsuranceNameBox"][0][1])
                 pyautogui.write(self.person["Insurance 0"][0])
@@ -257,19 +298,25 @@ class Robot:
                 pyautogui.sleep(0.2)
                 if self.stop_typing: return
 
-                pyautogui.click(self.png_locations["PolicyIDBox"][0][0] + 50,
-                                self.png_locations["PolicyIDBox"][0][1])
-                pyautogui.write(self.person["Insurance 0"][3])
-                pyautogui.press('enter')
-                pyautogui.sleep(0.2)
+                self.type_and_verify(self.png_locations["PolicyIDBox"][0][0] + 50,self.png_locations["PolicyIDBox"][0][1],
+                                     self.person["Insurance 0"][3])
+                #pyautogui.click(self.png_locations["PolicyIDBox"][0][0] + 50,
+                #                self.png_locations["PolicyIDBox"][0][1])
+                #pyautogui.write(self.person["Insurance 0"][3])
+                #pyautogui.press('enter')
+                #pyautogui.sleep(0.2)
                 if self.stop_typing: return
 
-                pyautogui.click(self.png_locations["GroupNoBox"][0][0] + 50, self.png_locations["GroupNoBox"][0][1])
-                pyautogui.write(self.person["Insurance 0"][2])
-                pyautogui.press('enter')
-                pyautogui.sleep(0.2)
+                self.type_and_verify(self.png_locations["GroupNoBox"][0][0] + 50, self.png_locations["GroupNoBox"][0][1],
+                                     self.person["Insurance 0"][2])
+                #pyautogui.click(self.png_locations["GroupNoBox"][0][0] + 50, self.png_locations["GroupNoBox"][0][1])
+                #pyautogui.write(self.person["Insurance 0"][2])
+                #pyautogui.press('enter')
+                #pyautogui.sleep(0.2)
                 if self.stop_typing: return
 
+                #self.type_and_verify(self.png_locations["InsuranceNameBox"][1][0] + 40,self.png_locations["InsuranceNameBox"][1][1],
+                #                     self.person["Insurance 1"][0])
                 pyautogui.click(self.png_locations["InsuranceNameBox"][1][0] + 40,
                                 self.png_locations["InsuranceNameBox"][1][1])
                 pyautogui.write(self.person["Insurance 1"][0])
@@ -277,19 +324,25 @@ class Robot:
                 pyautogui.sleep(0.2)
                 if self.stop_typing: return
 
-                pyautogui.click(self.png_locations["PolicyIDBox"][1][0] + 50,
-                                self.png_locations["PolicyIDBox"][1][1])
-                pyautogui.write(self.person["Insurance 1"][3])
-                pyautogui.press('enter')
-                pyautogui.sleep(0.2)
+                self.type_and_verify(self.png_locations["PolicyIDBox"][1][0] + 50,self.png_locations["PolicyIDBox"][1][1],
+                                     self.person["Insurance 1"][3])
+                #pyautogui.click(self.png_locations["PolicyIDBox"][1][0] + 50,
+                #                self.png_locations["PolicyIDBox"][1][1])
+                #pyautogui.write(self.person["Insurance 1"][3])
+                #pyautogui.press('enter')
+                #pyautogui.sleep(0.2)
                 if self.stop_typing: return
 
-                pyautogui.click(self.png_locations["GroupNoBox"][1][0] + 50, self.png_locations["GroupNoBox"][1][1])
-                pyautogui.write(self.person["Insurance 1"][2])
-                pyautogui.press('enter')
-                pyautogui.sleep(0.2)
+                self.type_and_verify(self.png_locations["GroupNoBox"][1][0] + 50, self.png_locations["GroupNoBox"][1][1],
+                                     self.person["Insurance 1"][2])
+                #pyautogui.click(self.png_locations["GroupNoBox"][1][0] + 50, self.png_locations["GroupNoBox"][1][1])
+                #pyautogui.write(self.person["Insurance 1"][2])
+                #pyautogui.press('enter')
+                #pyautogui.sleep(0.2)
                 if self.stop_typing: return
 
+                #self.type_and_verify(self.png_locations["InsuranceNameBox"][2][0] + 40,self.png_locations["InsuranceNameBox"][2][1],
+                #                     self.person["Insurance 2"][0])
                 pyautogui.click(self.png_locations["InsuranceNameBox"][2][0] + 40,
                                 self.png_locations["InsuranceNameBox"][2][1])
                 pyautogui.write(self.person["Insurance 2"][0])
@@ -297,7 +350,6 @@ class Robot:
                 pyautogui.sleep(0.2)
                 if self.stop_typing: return
 
-                # RELATION
                 pyautogui.click(self.png_locations["InsuranceNameBox"][2][0] + 40,
                                 self.png_locations["InsuranceNameBox"][2][1] + 20)
                 pyautogui.write("S")
@@ -305,17 +357,21 @@ class Robot:
                 pyautogui.sleep(0.2)
                 if self.stop_typing: return
 
-                pyautogui.click(self.png_locations["PolicyIDBox"][2][0] + 50,
-                                self.png_locations["PolicyIDBox"][2][1])
-                pyautogui.write(self.person["Insurance 2"][3])
-                pyautogui.press('enter')
-                pyautogui.sleep(0.2)
+                self.type_and_verify(self.png_locations["PolicyIDBox"][2][0] + 50,self.png_locations["PolicyIDBox"][2][1],
+                                     self.person["Insurance 2"][3])
+                #pyautogui.click(self.png_locations["PolicyIDBox"][2][0] + 50,
+                #                self.png_locations["PolicyIDBox"][2][1])
+                #pyautogui.write(self.person["Insurance 2"][3])
+                #pyautogui.press('enter')
+                #pyautogui.sleep(0.2)
                 if self.stop_typing: return
 
-                pyautogui.click(self.png_locations["GroupNoBox"][2][0] + 50, self.png_locations["GroupNoBox"][2][1])
-                pyautogui.write(self.person["Insurance 2"][2])
-                pyautogui.press('enter')
-                pyautogui.sleep(0.2)
+                self.type_and_verify(self.png_locations["GroupNoBox"][2][0] + 50, self.png_locations["GroupNoBox"][2][1],
+                                     self.person["Insurance 2"][2])
+                #pyautogui.click(self.png_locations["GroupNoBox"][2][0] + 50, self.png_locations["GroupNoBox"][2][1])
+                #pyautogui.write(self.person["Insurance 2"][2])
+                #pyautogui.press('enter')
+                #pyautogui.sleep(0.2)
                 if self.stop_typing: return
             except KeyError as e:
                 pass
@@ -328,10 +384,11 @@ class Robot:
         time.sleep(1)
 
         # Load last saved patient into box
-        pyautogui.click(self.png_locations["ChartLedger"][0], self.png_locations["ChartLedger"][1])
-        pyautogui.write(self.clipboard)
+        self.type_and_verify(self.png_locations["ChartLedger"][0], self.png_locations["ChartLedger"][1], self.clipboard)
+        #pyautogui.click(self.png_locations["ChartLedger"][0], self.png_locations["ChartLedger"][1])
+        #pyautogui.write(self.clipboard)
         pyautogui.press('enter')
-        time.sleep(2)
+        #time.sleep(2)
         if self.stop_typing: return
 
         # Click billing box and open the billing page
@@ -346,24 +403,58 @@ class Robot:
 
         if self.stop_typing: return
 
-        pyautogui.click(self.png_locations["AuthNo"][0] + 80,
-                        self.png_locations["AuthNo"][1])
+        #pyautogui.click(self.png_locations["AuthNo"][0] + 80,
+        #                self.png_locations["AuthNo"][1])
         try:
-            pyautogui.write(self.person["Insurance"][4])
+            self.type_and_verify(self.png_locations["AuthNo"][0] + 80,self.png_locations["AuthNo"][1],
+                                 self.person["Insurance"][4])
+            #pyautogui.write(self.person["Insurance"][4])
         except KeyError as e:
-            pyautogui.write(self.person["Insurance 0"][4])
+            self.type_and_verify(self.png_locations["AuthNo"][0] + 80, self.png_locations["AuthNo"][1],
+                                 self.person["Insurance 0"][4])
+            #pyautogui.write(self.person["Insurance 0"][4])
 
         pyautogui.click(self.png_locations["ClaimInfoTab"][0], self.png_locations["ClaimInfoTab"][1])
         time.sleep(0.2)
         if self.stop_typing: return
-        pyautogui.click(self.png_locations["AdmissionDateBox"][0]+60, self.png_locations["AdmissionDateBox"][1])
-        pyautogui.write(self.person["Admission date"][0])
+        self.type_and_verify(self.png_locations["AdmissionDateBox"][0]+60, self.png_locations["AdmissionDateBox"][1],
+                             self.person["Admission date"][0])
+        #pyautogui.click(self.png_locations["AdmissionDateBox"][0]+60, self.png_locations["AdmissionDateBox"][1])
+        #pyautogui.write(self.person["Admission date"][0])
 
         if self.stop_typing: return
         time.sleep(1)
         pyautogui.press('f3')
         time.sleep(0.5)
         pyautogui.press('esc')
+
+    def type_and_verify(self,x:int,y:int,message:str):
+        if self.retryCount == 1:
+            pyautogui.press('enter')
+            print("Mismatch detected Retrying once")
+        elif self.retryCount > 1:
+            self.stop_typing = True
+            return
+
+        pyautogui.doubleClick(x, y,interval=0.2)
+        pyautogui.write(message)
+        time.sleep(0.1)
+        self.clipboard = ""
+        pyperclip.copy("")
+        pyautogui.doubleClick(x, y,
+                              interval=0.2)
+        pyautogui.sleep(0.1)
+        pyautogui.hotkey('ctrl', 'c')
+        time.sleep(0.5)
+        self.clipboard = pyperclip.paste()
+        if not self.clipboard.upper() in message.upper():
+            self.retryCount += 1
+            self.type_and_verify(x,y,message)
+        else:
+            self.retryCount = 0
+
+
+
 
     def load_billing_locations(self):
         # Load initial Billing locations
@@ -391,6 +482,7 @@ class Robot:
         pyautogui.hotkey('ctrl', 'c')
         time.sleep(0.5)
         self.clipboard = pyperclip.paste()
+        self.person["Chart Number"] = self.clipboard
 
         if self.stop_typing: return
         pyautogui.press("esc")

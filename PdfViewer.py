@@ -131,7 +131,8 @@ class APP:
         self.simplified_text_area = tk.Text(self.simplified_text_tab, yscrollcommand=self.simplified_text_scroll.set)
         self.simplified_text_area.pack(fill="both", expand=True)
         self.simplified_text_scroll.config(command=self.simplified_text_area.yview)
-        tk.Button(self.simplified_text_tab, text="Export", command=self.onExportClick).pack(pady=5)
+        self.export_button =tk.Button(self.simplified_text_tab, text="Export", command=self.onExportClick)
+        self.export_button.pack(pady=5)
 
         # AI mode
         self.ai_text_tab = tk.Frame(self.tabpane)
@@ -329,6 +330,7 @@ class APP:
             self.simplified_text_area.delete("1.0", tk.END)
             self.simplified_text_area.insert(1.0, "Add preferences to settings")
         elif not self.people:
+            self.export_button.config(state='disabled')
             current_person = {}
             with open(self.activePDF, 'rb') as pdf_file:
                 pdf_reader = PdfReader(pdf_file)
@@ -371,6 +373,7 @@ class APP:
 
             self.simplified_text_area.delete("1.0", tk.END)
             self.simplified_text_area.insert(1.0, text)
+            self.export_button.config(state='normal')
 
     def AIMode(self):
         print("no")
