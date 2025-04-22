@@ -8,6 +8,7 @@ import PyPDF2
 from PrefPage import PrefPhraseController
 from tkinter import ttk, filedialog, messagebox  # For TabPane and other modern widgets
 from PyPDF2 import PdfReader
+from google import genai
 
 import tkPDFViewerUpdated as pdf
 from robot import Robot
@@ -15,6 +16,7 @@ from robot import Robot
 
 class APP:
     def __init__(self):
+        self.client = genai.Client(api_key="GEMINI_API_KEY")
         self.files = []
         self.activePDF = "" #r "C:\Users\spide\Downloads\_FACESHEETS_01042024.pdf"
         self.prevPDF = ""
@@ -23,10 +25,15 @@ class APP:
         self.csv_flag = False
         self.app_path = ""
         self.app_flag = False
+        self.ai_mode = False
+        self.ai_prompt = ""
+        self.ai_search = []
         self.settings = ""
         self.regex_pairs = []
         self.data_replace_pairs = []
         self.people = []
+        self.ai_pdf_results = []
+        self.ai_results = []
 
         #application
         # Create the main window
@@ -125,6 +132,16 @@ class APP:
         self.simplified_text_area.pack(fill="both", expand=True)
         self.simplified_text_scroll.config(command=self.simplified_text_area.yview)
         tk.Button(self.simplified_text_tab, text="Export", command=self.onExportClick).pack(pady=5)
+
+        # AI mode
+        self.ai_text_tab = tk.Frame(self.tabpane)
+        if self.ai_mode:
+            self.tabpane.add(self.ai_text_tab, text="AI Mode")
+        self.ai_text_scroll = tk.Scrollbar(self.ai_text_tab)
+        self.ai_text_scroll.pack(side="right", fill="y")
+        self.ai_text_area = tk.Text(self.ai_text_tab, yscrollcommand=self.ai_text_scroll.set)
+        self.ai_text_scroll.config(command=self.ai_text_area.yview)
+        self.ai_text_area.pack(fill="both", expand=True)
 
         # Status bar (HBox)
         self.status_bar = tk.Frame(self.root)
@@ -237,9 +254,17 @@ class APP:
         self.csv_flag = data["csv_flag"]
         self.app_path = data["app_path"]
         self.app_flag = data["app_flag"]
+        self.ai_mode = data["AI mode flag"]
         self.settings = data["settings"]
         self.regex_pairs = data["regex pairs"]
         self.data_replace_pairs = data["data Replace Pairs"]
+        self.ai_prompt = data["active AI prompt"]
+        self.ai_search = data["AI pdf terms"]
+
+        if self.ai_mode:
+            self.tabpane.add(self.ai_text_tab, text="AI Mode")
+        else:
+            self.tabpane.forget(2)
 
         # print("Export_Csv: " + self.export_csv)
         # print("App_path: " + self.app_path)
@@ -288,59 +313,202 @@ class APP:
         tab_id = event.widget.index(selected_tab)
         # print(f"Tab {tab_id + 1} clicked!")
         if tab_id == 1:
-            if not self.regex_pairs and not self.files:
-                self.simplified_text_area.delete("1.0", tk.END)
-                self.simplified_text_area.insert(1.0, "Please load PDF and add preferences to settings")
-            elif not self.files:
-                self.simplified_text_area.delete("1.0", tk.END)
-                self.simplified_text_area.insert(1.0, "Please load PDF")
-            elif not self.regex_pairs:
-                self.simplified_text_area.delete("1.0", tk.END)
-                self.simplified_text_area.insert(1.0, "Add preferences to settings")
-            elif not self.people:
-                current_person = {}
-                with open(self.activePDF, 'rb') as pdf_file:
-                    pdf_reader = PdfReader(pdf_file)
-                    for page in pdf_reader.pages:
-                        for data_name, regex in self.regex_pairs:
-                            matches = regex.findall(page.extract_text())
-                            index = 0
-                            for item in matches:
-                                personData = []
-                                if isinstance(item, tuple):
-                                    for tupleEntry in item:
-                                        for start, end in self.data_replace_pairs:
-                                            tupleEntry = tupleEntry.replace(start, end)
-                                        if not tupleEntry.strip():
-                                            tupleEntry = ""
-                                        if "Printed by" in str(tupleEntry):
-                                            tupleEntry = ""
-                                        personData.append(tupleEntry)
-                                else:
+            self.simplifyText()
+        elif tab_id == 2:
+            self.AIMode()
+
+
+    def simplifyText(self):
+        if not self.regex_pairs and not self.files:
+            self.simplified_text_area.delete("1.0", tk.END)
+            self.simplified_text_area.insert(1.0, "Please load PDF and add preferences to settings")
+        elif not self.files:
+            self.simplified_text_area.delete("1.0", tk.END)
+            self.simplified_text_area.insert(1.0, "Please load PDF")
+        elif not self.regex_pairs:
+            self.simplified_text_area.delete("1.0", tk.END)
+            self.simplified_text_area.insert(1.0, "Add preferences to settings")
+        elif not self.people:
+            current_person = {}
+            with open(self.activePDF, 'rb') as pdf_file:
+                pdf_reader = PdfReader(pdf_file)
+                for page in pdf_reader.pages:
+                    for data_name, regex in self.regex_pairs:
+                        matches = regex.findall(page.extract_text())
+                        index = 0
+                        for item in matches:
+                            personData = []
+                            if isinstance(item, tuple):
+                                for tupleEntry in item:
                                     for start, end in self.data_replace_pairs:
-                                        item = item.replace(start, end)
-                                    personData.append(item)
-                                if len(matches) > 1:
-                                    current_person[data_name + " " + str(index)] = personData
+                                        tupleEntry = tupleEntry.replace(start, end)
+                                    if not tupleEntry.strip():
+                                        tupleEntry = ""
+                                    if "Printed by" in str(tupleEntry):
+                                        tupleEntry = ""
+                                    personData.append(tupleEntry)
+                            else:
+                                for start, end in self.data_replace_pairs:
+                                    item = item.replace(start, end)
+                                personData.append(item)
+                            if len(matches) > 1:
+                                current_person[data_name + " " + str(index)] = personData
+                            else:
+                                current_person[data_name] = personData
+                            index += 1
+                    self.people.append(current_person)
+                    current_person = {}
+
+            text = ""
+            text += str(self.extract_unique_keys(self.people))
+            text += "\n"
+            for person in self.people:
+                if len(person) > 0:
+                    for value in person.values():
+                        text += str(value)
+                        text += ", "
+                    text += "\n"
+
+            self.simplified_text_area.delete("1.0", tk.END)
+            self.simplified_text_area.insert(1.0, text)
+
+    def AIMode(self):
+        print("no")
+        if not self.ai_prompt:
+            self.ai_text_area.delete("1.0", tk.END)
+            self.ai_text_area.insert(1.0, "Prompt missing please give prompt in settings")
+        elif not self.ai_search:
+            self.ai_text_area.delete("1.0", tk.END)
+            self.ai_text_area.insert(1.0, "PDF Search terms missing please load in settings")
+        elif not self.files:
+            self.ai_text_area.delete("1.0", tk.END)
+            self.ai_text_area.insert(1.0, "Please load PDF")
+        elif not self.ai_pdf_results:
+            self.ai_text_area.delete("1.0", tk.END)
+            exclude_phrases = ["Printed by","Encounter Date:"]
+
+            self.ai_pdf_results = self.extract_text_blocks_between_markers(self.ai_search[0],self.ai_search[1],exclude_phrases)
+            for result in self.ai_pdf_results:
+                response = self.client.models.generate_content(
+                    model="gemma-3-27b-it",
+                    contents=[self.ai_prompt+"\n"+str(result)]
+                )
+                self.ai_results.append(response.text)
+                self.ai_text_area.insert(1.0, response.text)
+                self.ai_text_area.insert(1.0, "\n\n")
+                #print(response.text)
+            print(self.ai_results)
+
+    def extract_text_blocks_between_markers(
+            self,
+            start_term: str,
+            end_term: str,
+            exclude_phrases: [str]
+    ) -> [str]:  # Return type is now List[str]
+        all_found_blocks = []
+        current_block_lines = []
+        capturing = False
+
+        try:
+            with open(self.activePDF, 'rb') as pdf_file:
+                reader = PyPDF2.PdfReader(pdf_file)
+                num_pages = len(reader.pages)
+                print(f"Processing {num_pages} pages...")
+
+                for page_num in range(num_pages):
+                    page = reader.pages[page_num]
+                    try:
+                        page_text = page.extract_text()
+                    except Exception as e:
+                        print(f"Warning: Could not extract text from page {page_num + 1}. Error: {e}")
+                        page_text = None  # Ensure page_text is None on extraction error
+
+                    if page_text is None:
+                        # print(f"Warning: Could not extract text from page {page_num + 1}") # Already printed above potentially
+                        continue
+
+                    lines = page_text.splitlines()  # Split text into lines
+
+                    for line in lines:
+                        # --- State Machine Logic ---
+
+                        # 1. If we are currently capturing: Check for the end term
+                        if capturing:
+                            end_index = line.find(end_term)
+                            if end_index != -1:
+                                # End term found! Capture text *before* it on this line
+                                content_before_end = line[:end_index]
+                                is_excluded = any(phrase in content_before_end for phrase in exclude_phrases)
+                                # Add if not excluded and not just whitespace
+                                if content_before_end.strip() and not is_excluded:
+                                    current_block_lines.append(content_before_end)
+
+                                # --- Finalize the current block ---
+                                if current_block_lines:  # Only add if we actually captured something
+                                    completed_block = "\n".join(current_block_lines)
+                                    all_found_blocks.append(completed_block)
+
+                                # --- Reset for the next potential block ---
+                                current_block_lines = []
+                                capturing = False
+                                # Continue searching on the rest of the page after this line
+
+                            else:
+                                # End term not on this line, process whole line if capturing
+                                is_excluded = any(phrase in line for phrase in exclude_phrases)
+                                if not is_excluded:
+                                    current_block_lines.append(line)
+
+                        # 2. If we are not capturing: Check for the start term
+                        # This part only executes if capturing is False (i.e., after finding end or before finding first start)
+                        else:  # not capturing
+                            start_index = line.find(start_term)
+                            if start_index != -1:
+                                # Start term found!
+                                capturing = True
+                                current_block_lines = []  # Ensure we start fresh for this new block
+
+                                # Capture text *after* start term on the *same line*
+                                content_after_start = line[start_index + len(start_term):]
+
+                                # Check if end term is *also* on this same line, after start term
+                                end_index_same_line = content_after_start.find(end_term)
+                                if end_index_same_line != -1:
+                                    # Start and End on the same line!
+                                    content_between = content_after_start[:end_index_same_line]
+                                    is_excluded = any(phrase in content_between for phrase in exclude_phrases)
+                                    # Add if not excluded and not just whitespace
+                                    if content_between.strip() and not is_excluded:
+                                        current_block_lines.append(content_between)  # Add to current block
+
+                                    # --- Finalize this same-line block ---
+                                    if current_block_lines:
+                                        completed_block = "\n".join(current_block_lines)
+                                        all_found_blocks.append(completed_block)
+
+                                    # --- Reset ---
+                                    current_block_lines = []
+                                    capturing = False  # Stop capturing immediately, ready for next start term
                                 else:
-                                    current_person[data_name] = personData
-                                index += 1
-                        self.people.append(current_person)
-                        current_person= {}
+                                    # End term not on the same line, capture the rest of this line
+                                    is_excluded = any(phrase in content_after_start for phrase in exclude_phrases)
+                                    # Add if not excluded and not just whitespace
+                                    if content_after_start.strip() and not is_excluded:
+                                        current_block_lines.append(content_after_start)
+                                # Continue processing next lines (now potentially capturing or looking for end)
 
-                text = ""
-                text += str(self.extract_unique_keys(self.people))
-                text += "\n"
-                for person in self.people:
-                    if len(person) > 0:
-                        for value in person.values():
-                            text += str(value)
-                            text += ", "
-                        text += "\n"
+                # After processing all pages, check if we were left capturing (unclosed block)
+                if capturing:
+                    print(
+                        f"Warning: Reached end of document while still capturing. The last block starting with '{start_term}' might be incomplete as '{end_term}' was not found.")
+                    # Decide if you want to include incomplete blocks:
+                    if current_block_lines:
+                        all_found_blocks.append("\n".join(current_block_lines) + "\n[INCOMPLETE BLOCK]")
 
-                self.simplified_text_area.delete("1.0", tk.END)
-                self.simplified_text_area.insert(1.0, text)
-
+            return all_found_blocks
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
+            return []  # Return empty list on error
 
 
     def onExportClick(self):
@@ -348,32 +516,12 @@ class APP:
         # print("Export button clicked")
         if self.people:
             if self.app_flag:
-                # print("Exporting to App")
-                #add_patient_info_window = tk.Toplevel(self.root)
-                #add_patient_info_window.title("Patients added")
-                #text_frame = tk.Frame(add_patient_info_window)
-                #text_frame.pack(fill=tk.BOTH, expand=True)
-
-                #text_area = tk.Text(text_frame, wrap=tk.WORD, state=tk.NORMAL)
-                #text_area.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-                #text_scroll = tk.Scrollbar(text_frame, command=text_area.yview)
-                #text_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-                #text_area.config(yscrollcommand=text_scroll.set)
-
-                #text_area.wait_visibility()
-
                 print("Patient creation started. Press Ctrl+Q to stop.")
                 try:
                     robot = Robot(self)
                     robot.create_new_patients()
                 except Exception as e:
-                    print(f"Exception occured during creation: {e}. Catching to make CSV")
-
-                # thread = threading.Thread(target=robot.create_new_patients())
-                # thread.start()
-                # thread.join()
-                # add_patient_info_window.after(3000, add_patient_info_window.destroy)
+                    print(f"Exception occurred during creation: {e}. Catching to make CSV")
 
             if self.csv_flag:
                 # print("Exporting to CSV")
@@ -405,7 +553,7 @@ class APP:
                         writer.writerow(row)
 
         except Exception as e:
-            # print(f"An error ocurred writing into the file: {e}")
+            # print(f"An error occurred writing into the file: {e}")
             raise
         finally:
             csvfile.close()

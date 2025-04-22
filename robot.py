@@ -14,6 +14,51 @@ import tkinter as tk
 from pathlib import Path
 
 
+def get_elements_at_indices(original_list, indices):
+    """
+    Creates a new list using a list.
+
+    Args:
+        original_list: The original list.
+        indices: A list of integer indices.
+
+    Returns:
+        A new list, or an empty list if inputs are invalid.
+
+    Raises:
+        TypeError: If original_list isn't a list or indices contains non-integers.
+        IndexError: If any index is out of range.
+
+    """
+    if not isinstance(original_list, list):
+        raise TypeError("original_list must be a list")
+    if not isinstance(indices, list):
+        raise TypeError("indices must be a list")
+    if not all(isinstance(i, int) for i in indices):
+        raise TypeError("All indices must be integers.")
+    if not original_list or not indices:
+        return []
+
+    try:
+        new_list = [original_list[i] for i in indices]
+        return new_list
+    except IndexError as e:
+        raise IndexError(f"An index is out of bounds: {e}") from e  # add better error context
+
+
+def find_similar_index(list_of_strings, target_string, similarity_threshold=0.8):
+    best_match_index = -1
+    highest_similarity = 0
+
+    for index, item in enumerate(list_of_strings):
+        similarity_ratio = SequenceMatcher(None, target_string, str(item)).ratio()
+        if similarity_ratio > highest_similarity and similarity_ratio >= similarity_threshold:
+            highest_similarity = similarity_ratio
+            best_match_index = index
+
+    return best_match_index if best_match_index != -1 else None
+
+
 class Robot:
     def __init__(self,pdf_viewer_app):
         #self.text_area = text_area
@@ -37,7 +82,6 @@ class Robot:
         self.start_application()
         self.load_locations()
 
-        # self.create_new_patients()
 
         # print(self.png_locations)
 
@@ -52,13 +96,6 @@ class Robot:
         print("Hotkey pressed. Stopping typing.")
         self.stop_typing = True  # Set the flag to True
 
-    def cleanup_and_exit(self):
-        """Helper function for graceful exit."""
-        # self.text_area.insert(tk.END,
-        #                      "Process killed with keyboard. Closing this window in 3 seconds" + "\n")
-        # self.text_area.see(tk.END)
-        print("Process killed with keyboard")
-
     def create_new_patients(self):
         # self.text_area.insert(tk.END, "Adding data to App. Press Ctrl+Q to kill process.\n")
         # self.text_area.see(tk.END)
@@ -72,37 +109,35 @@ class Robot:
 
             # --- Check stop_typing flag *before* each major step ---
             if self.stop_typing:
-                self.cleanup_and_exit()  # Call a cleanup function
+                print("Process killed with keyboard")
                 return  # Exit the create_new_patients() function early
 
             self.type_patient_info()
 
             if self.stop_typing:
-                self.cleanup_and_exit()
+                print("Process killed with keyboard")
                 return
 
             self.type_insurance()
 
             if self.stop_typing:
-                self.cleanup_and_exit()
+                print("Process killed with keyboard")
                 return
 
             self.finish_patient()
             if self.stop_typing:  # Check one last time after finish_patient
-                self.cleanup_and_exit()
+                print("Process killed with keyboard")
                 return  # Exit function to not assign to Chart Number.
             person["Chart Number"] = self.clipboard
 
             self.type_billing()
 
             print("Finished: " + str(self.clipboard))
-            # self.text_area.insert(tk.END, "Finished: " + str(self.clipboard) + "\n")
-            # self.text_area.see(tk.END)
             if self.stop_typing:  # Check one last time after finish_patient
-                self.cleanup_and_exit()
+                print("Process killed with keyboard")
                 return  # Exit function to not assign to Chart Number.
 
-        self.cleanup_and_exit()
+        print("Finished: " + str(self.clipboard))
         #messagebox.showerror("Complete!", "All data entered with no error. Please close this window and the log window")
 
 
@@ -331,13 +366,13 @@ class Robot:
         pyautogui.press('esc')
 
     def load_billing_locations(self):
-        # Load inital Billing locations
-        self.load_png_list(self.get_elements_at_indices(self.dir_to_list, [2,4,8]))
+        # Load initial Billing locations
+        self.load_png_list(get_elements_at_indices(self.dir_to_list, [2, 4, 8]))
 
         # Click and load
         pyautogui.click(self.png_locations["ClaimInfoTab"][0], self.png_locations["ClaimInfoTab"][1])
         time.sleep(0.5)
-        self.load_png_list(self.get_elements_at_indices(self.dir_to_list, [0]))
+        self.load_png_list(get_elements_at_indices(self.dir_to_list, [0]))
 
         # Go back to Billing so it can be loaded
         pyautogui.click(self.png_locations["BillingInfoTab"][0]-80, self.png_locations["BillingInfoTab"][1])
@@ -363,22 +398,9 @@ class Robot:
         pyautogui.press("esc")
         time.sleep(3)
 
-
-    def find_similar_index(self, list_of_strings, target_string, similarity_threshold=0.8):
-        best_match_index = -1
-        highest_similarity = 0
-
-        for index, item in enumerate(list_of_strings):
-            similarity_ratio = SequenceMatcher(None, target_string, str(item)).ratio()
-            if similarity_ratio > highest_similarity and similarity_ratio >= similarity_threshold:
-                highest_similarity = similarity_ratio
-                best_match_index = index
-
-        return best_match_index if best_match_index != -1 else None
-
     def load_locations(self):
         # load "ledger" Location
-        index = self.find_similar_index(self.dir_to_list, "LedgerList", 0.15)
+        index = find_similar_index(self.dir_to_list, "LedgerList", 0.15)
         self.load_png_list(self.dir_to_list[index:index + 1])
 
         # Open Ledger
@@ -386,21 +408,22 @@ class Robot:
         pyautogui.sleep(1)
 
         # Load chart and billing box locations on ledger page
-        self.load_png_list(self.get_elements_at_indices(self.dir_to_list,[3,5]))
+        self.load_png_list(get_elements_at_indices(self.dir_to_list, [3, 5]))
 
         # Open Patient Page
         pyautogui.press('f8')
         time.sleep(3.5)
 
         # Load patient Info boxes locations
-        self.load_png_list(self.get_elements_at_indices(self.dir_to_list,[1,6,7,9,10,11,13,15,17,19,20,22,23,24]))
+        self.load_png_list(
+            get_elements_at_indices(self.dir_to_list, [1, 6, 7, 9, 10, 11, 13, 15, 17, 19, 20, 22, 23, 24]))
 
         # Open Insurance tab
         pyautogui.click(self.png_locations["InsuranceList"][0], self.png_locations["InsuranceList"][1])
         time.sleep(2)
 
         # Load Insurance Info boxes locations
-        self.load_png_list(self.get_elements_at_indices(self.dir_to_list,[12,14,21]), multi=True)
+        self.load_png_list(get_elements_at_indices(self.dir_to_list, [12, 14, 21]), multi=True)
 
         #Go home
         pyautogui.press('esc')
@@ -425,37 +448,6 @@ class Robot:
                     except pyautogui.ImageNotFoundException:
                         location = "Not on this screen"
                 self.png_locations[png.stem] = location
-
-    def get_elements_at_indices(self, original_list, indices):
-        """
-        Creates a new list using a list.
-
-        Args:
-            original_list: The original list.
-            indices: A list of integer indices.
-
-        Returns:
-            A new list, or an empty list if inputs are invalid.
-
-        Raises:
-            TypeError: If original_list isn't a list or indices contains non-integers.
-            IndexError: If any index is out of range.
-
-        """
-        if not isinstance(original_list, list):
-            raise TypeError("original_list must be a list")
-        if not isinstance(indices, list):
-            raise TypeError("indices must be a list")
-        if not all(isinstance(i, int) for i in indices):
-            raise TypeError("All indices must be integers.")
-        if not original_list or not indices:
-            return []
-
-        try:
-            new_list = [original_list[i] for i in indices]
-            return new_list
-        except IndexError as e:
-            raise IndexError(f"An index is out of bounds: {e}") from e  # add better error context
 
     def start_application(self):
         if self.check_if_process_running(self.filename):

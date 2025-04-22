@@ -16,8 +16,14 @@ class PrefPhraseController:
         # Initialize variables (replace with actual values or types)
         self.export_csv_flag = tk.BooleanVar(value=True)
         self.export_app_flag = tk.BooleanVar(value=True)
+        self.ai_mode_flag = tk.BooleanVar(value=True)
         self.regex_as_text=[]
         self.regexPairs = []
+        self.ai_prompts = []
+        self.ai_search_terms = []
+        self.active_prompt = ""
+        self.ai_active_search_term_start =""
+        self.ai_active_search_term_end = ""
         self.dataReplacePairs = []
         self.people = []
         self.export_csv = ""
@@ -51,6 +57,7 @@ class PrefPhraseController:
         self.data_sweep_listbox = None
         self.regex_subtab = None
         self.subtabpane = None
+        self.sub_sub_tabpane = None
         self.Data_sweep_tab = None
         self.path_to_app_button = None
         self.app_path_textfield = None
@@ -107,6 +114,14 @@ class PrefPhraseController:
             self.export_tab, text="Path to App", command=self.on_path_to_app_click
         )
         self.path_to_app_button.grid(row=1, column= 2, padx=5, pady=5)
+
+        self.export_to_app_toggle = ttk.Checkbutton(
+            self.export_tab,
+            text="AI Mode",
+            variable=self.ai_mode_flag,
+            command=self.on_ai_mode_toggle_click
+        )
+        self.export_to_app_toggle.grid(row=2, column=0, padx=5, pady=5)
 
         #Second tab
         self.Data_sweep_tab = tk.Frame(self.tabpane)
@@ -180,6 +195,72 @@ class PrefPhraseController:
         )
         self.dataRep_add_button.grid(row=1, column=6, padx=5, pady=5)
 
+        # subtab 3
+        self.ai_subtab = tk.Frame(self.subtabpane)
+        if self.ai_mode_flag.get():
+            self.subtabpane.add(self.ai_subtab, text="AI Settings")
+        #self.sub_sub_tabpane = ttk.Notebook(self.ai_subtab)
+        #self.sub_sub_tabpane.pack(fill="both", expand=True)
+
+        # sub_sub_tab 1
+        self.ai_splitpane = tk.PanedWindow(self.ai_subtab, orient="horizontal")
+        self.ai_splitpane.pack(fill="both", expand=True)
+        #self.sub_sub_tabpane.add(self.ai_splitpane, text="AI prompt")
+
+        self.ai_prompt = tk.Frame(self.ai_splitpane, width=40)
+        self.ai_splitpane.add(self.ai_prompt)
+
+        self.ai_prompt_listbox = tk.Listbox(self.ai_prompt)
+        self.ai_prompt_listbox.grid(row=0, column=0, columnspan=7, pady=5)
+        self.ai_prompt_listbox.config(height=20, width=60)
+        self.ai_prompt_listbox.bind('<<ListboxSelect>>', self.on_ai_prompt_select)
+
+        self.ai_prompt_remove_button = ttk.Button(
+            self.ai_prompt, text="Remove", command=self.prompt_remove_click
+        )
+        self.ai_prompt_remove_button.grid(row=2, column=0, padx=5, pady=5)
+
+        self.ai_prompt_data_type_label = ttk.Label(self.ai_prompt, text="Starting Prompt:")
+        self.ai_prompt_data_type_label.grid(row=1, column=0, padx=5, pady=5)
+
+        self.ai_prompt_start_prompt_textfield = ttk.Entry(self.ai_prompt)
+        self.ai_prompt_start_prompt_textfield.grid(row=1, column=1, pady=5)
+
+        self.ai_prompt_add_button = ttk.Button(
+            self.ai_prompt, text="Add", command=self.prompt_add_click
+        )
+        self.ai_prompt_add_button.grid(row=2, column=1, padx=5, pady=5)
+
+        self.ai_search = tk.Frame(self.ai_splitpane, width=40)
+        self.ai_splitpane.add(self.ai_search)
+
+        self.ai_search_listbox = tk.Listbox(self.ai_search)
+        self.ai_search_listbox.grid(row=0, column=0, columnspan=2, pady=5)
+        self.ai_search_listbox.config(height=20, width=60)
+        self.ai_search_listbox.bind('<<ListboxSelect>>', self.on_ai_search_select)
+
+        self.ai_search_remove_button = ttk.Button(
+            self.ai_search, text="Remove", command=self.search_remove_click
+        )
+        self.ai_search_remove_button.grid(row=3, column=0, padx=5, pady=5)
+
+        self.ai_search_data_start_label = ttk.Label(self.ai_search, text="Starting Phrase:")
+        self.ai_search_data_start_label.grid(row=1, column=0, padx=5, pady=5)
+
+        self.ai_search_start_prompt_textfield = ttk.Entry(self.ai_search)
+        self.ai_search_start_prompt_textfield.grid(row=1, column=1, pady=5)
+
+        self.ai_search_data_end_label = ttk.Label(self.ai_search, text="End Phrase:")
+        self.ai_search_data_end_label.grid(row=2, column=0, padx=5, pady=5)
+
+        self.ai_search_end_prompt_textfield = ttk.Entry(self.ai_search)
+        self.ai_search_end_prompt_textfield.grid(row=2, column=1, pady=5)
+
+        self.ai_search_add_button = ttk.Button(
+            self.ai_search, text="Add", command=self.search_add_click
+        )
+        self.ai_search_add_button.grid(row=3, column=1, padx=5, pady=5)
+
 
         # Third tab
         self.Save_settings_tab = tk.Frame(self.tabpane)
@@ -227,6 +308,15 @@ class PrefPhraseController:
             self.path_to_app_button.grid_forget()
             self.app_path_textfield.grid_forget()
 
+    def on_ai_mode_toggle_click(self):
+        if self.ai_mode_flag.get():
+            self.ai_mode_flag.set(True)
+            self.subtabpane.add(self.ai_subtab, text="AI Settings")
+        else:
+            self.ai_mode_flag.set(False)
+            self.subtabpane.forget(self.ai_subtab)
+            print("OFF")
+
     def on_path_to_csv_click(self):
         # print("on_path_to_csv_click clicked")
         filetypes = (("csv files", "*.csv"),("txt files", "*.txt"), ("all files", "*.*"))
@@ -270,6 +360,57 @@ class PrefPhraseController:
                 # print(selected_item)
                 offset += 1
 
+    def prompt_add_click(self):
+        # print("regex add")
+        dataName = self.ai_prompt_start_prompt_textfield.get()
+        if dataName:
+            # print(dataName+": + "+regex)
+            self.ai_prompt_listbox.insert("end",str(dataName))
+            self.ai_prompts.append(str(dataName))
+            self.active_prompt = str(dataName)
+            self.ai_prompt_start_prompt_textfield.delete(0, tk.END)
+        else:
+            messagebox.showerror("Error", "No Text in fields")
+
+    def prompt_remove_click(self):
+        # Function to handle deleting a file
+        # print("regex remove")
+        selection = self.ai_prompt_listbox.curselection()
+        offset = 0
+        if selection:  # Check if anything is selected
+            for selected_item in selection:
+                selected_item = selected_item - offset
+                self.ai_prompt_listbox.delete(selected_item)
+                self.ai_prompts.pop(selected_item)
+                offset += 1
+
+    def search_add_click(self):
+        # print("regex add")
+        start = self.ai_search_start_prompt_textfield.get()
+        end = self.ai_search_end_prompt_textfield.get()
+        if start or end:
+            # print(dataName+": + "+regex)
+            self.ai_search_listbox.insert("end",start+ " -> "+end)
+            self.ai_search_terms.append(start+ " -> "+end)
+            self.ai_active_search_term_start = start
+            self.ai_active_search_term_end = end
+            self.ai_search_start_prompt_textfield.delete(0, tk.END)
+            self.ai_search_end_prompt_textfield.delete(0, tk.END)
+        else:
+            messagebox.showerror("Error", "No Text in fields")
+
+    def search_remove_click(self):
+        # Function to handle deleting a file
+        # print("regex remove")
+        selection = self.ai_search_listbox.curselection()
+        offset = 0
+        if selection:  # Check if anything is selected
+            for selected_item in selection:
+                selected_item = selected_item - offset
+                self.ai_search_listbox.delete(selected_item)
+                self.ai_search_terms.pop(selected_item)
+                offset += 1
+
     def dataRep_add_click(self):
         # print("data replace add")
         dataPhrase = self.phrase_to_replace_textfield.get()
@@ -296,6 +437,26 @@ class PrefPhraseController:
                 # print(selected_item)
                 offset += 1
 
+    def on_ai_prompt_select(self,event):
+        widget = event.widget
+        selection_index = widget.curselection()
+
+        if selection_index:
+            item = selection_index[0]
+
+            text = widget.get(item)
+            self.active_prompt = str(text)
+
+    def on_ai_search_select(self, event):
+        widget = event.widget
+        selection_index = widget.curselection()
+
+        if selection_index:
+            item = selection_index[0]
+
+            text = widget.get(item)
+            self.ai_active_search_term_start, self.ai_active_search_term_end = str(text).split(" -> ")
+
     def save_to_file_path_click(self):
         # print("save_to_file_path_click clicked")
         if self.confirm_save == 0:
@@ -313,7 +474,12 @@ class PrefPhraseController:
             "Export to CSV": [bool(self.export_csv_flag),self.export_csv],
             "Export to App": [bool(self.export_app_flag), self.app_path],
             "Regex pairs": self.regex_as_text,
-            "Data Replace Pairs":self.dataReplacePairs
+            "Data Replace Pairs":self.dataReplacePairs,
+            "AI Mode": bool(self.ai_mode_flag),
+            "AI Prompts": self.ai_prompts,
+            "Active AI Prompt": self.active_prompt,
+            "AI Search Terms": self.ai_search_terms,
+            "Active AI Search Terms": [self.ai_active_search_term_start,self.ai_active_search_term_end]
         }
         try:
             with open(self.settings, 'w') as f:
@@ -354,6 +520,23 @@ class PrefPhraseController:
             for start,end in self.dataReplacePairs:
                 self.data_sweep_listbox.insert("end", start + " -> " + end)
 
+            self.ai_mode_flag.set(json_object["AI Mode"])  # Assuming these are Tkinter variables
+            self.on_ai_mode_toggle_click()
+
+            self.ai_prompts = json_object["AI Prompts"]
+            for data in self.ai_prompts:
+                self.ai_prompt_listbox.insert("end",data)
+
+            self.ai_active_search_term_start = json_object["Active AI Search Terms"][0]
+            self.ai_active_search_term_end = json_object["Active AI Search Terms"][1]
+
+            self.active_prompt = json_object["Active AI Prompt"]
+
+            self.ai_search_terms = json_object["AI Search Terms"]
+            for data in self.ai_search_terms:
+                self.ai_search_listbox.insert("end",data)
+
+
         except Exception as e:
             # print(f"An unexpected error occurred loading {openfile}: {e}")
             messagebox.showerror("Error!",
@@ -371,7 +554,10 @@ class PrefPhraseController:
             "app_flag": bool(self.export_app_flag),
             "settings": self.settings,
             "regex pairs": self.regexPairs,
-            "data Replace Pairs": self.dataReplacePairs
+            "data Replace Pairs": self.dataReplacePairs,
+            "active AI prompt": self.active_prompt,
+            "AI mode flag": bool(self.ai_mode_flag),
+            "AI pdf terms": [self.ai_active_search_term_start,self.ai_active_search_term_end]
         }
 
         # Pass the data to the PdfViewer instance
