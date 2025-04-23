@@ -77,6 +77,7 @@ class Robot:
         self.stop_typing = False  # flag to stop typing
         self.billing_loaded = False
         self.retryCount = 0
+        self.start_index = pdf_viewer_app.start
 
 
         keyboard.add_hotkey('ctrl+q', self.stop_typing_func)
@@ -102,41 +103,42 @@ class Robot:
         # self.text_area.see(tk.END)
 
         for person in self.pdf_viewer_app.people:
-            # try: # Removed outer try-except.  Handle exception within the loop.
-            self.person = person
-            print("Adding: " + str(person))
-            # self.text_area.insert(tk.END, "Adding: " + str(person) + "\n")
-            # self.text_area.see(tk.END)
+            self.pdf_viewer_app.end = self.pdf_viewer_app.index(person)
+            if self.pdf_viewer_app.end > self.start_index:
+                self.person = person
+                print("Adding: " + str(person))
+                # self.text_area.insert(tk.END, "Adding: " + str(person) + "\n")
+                # self.text_area.see(tk.END)
 
-            # --- Check stop_typing flag *before* each major step ---
-            if self.stop_typing:
-                print("Process killed with keyboard")
-                return  # Exit the create_new_patients() function early
+                # --- Check stop_typing flag *before* each major step ---
+                if self.stop_typing:
+                    print("Process killed with keyboard")
+                    return  # Exit the create_new_patients() function early
 
-            self.type_patient_info()
+                self.type_patient_info()
 
-            if self.stop_typing:
-                print("Process killed with keyboard")
-                return
+                if self.stop_typing:
+                    print("Process killed with keyboard")
+                    return
 
-            self.type_insurance()
+                self.type_insurance()
 
-            if self.stop_typing:
-                print("Process killed with keyboard")
-                return
+                if self.stop_typing:
+                    print("Process killed with keyboard")
+                    return
 
-            self.finish_patient()
-            if self.stop_typing:  # Check one last time after finish_patient
-                print("Process killed with keyboard")
-                return  # Exit function to not assign to Chart Number.
-            person["Chart Number"] = self.clipboard
+                self.finish_patient()
+                if self.stop_typing:  # Check one last time after finish_patient
+                    print("Process killed with keyboard")
+                    return  # Exit function to not assign to Chart Number.
+                person["Chart Number"] = self.clipboard
 
-            self.type_billing()
+                self.type_billing()
 
-            print("Finished: " + str(self.person["Chart Number"]))
-            if self.stop_typing:  # Check one last time after finish_patient
-                print("Process killed with keyboard")
-                return  # Exit function to not assign to Chart Number.
+                print("Finished: " + str(self.person["Chart Number"]))
+                if self.stop_typing:  # Check one last time after finish_patient
+                    print("Process killed with keyboard")
+                    return  # Exit function to not assign to Chart Number.
 
         print("Finished: " + str(self.person["Chart Number"]))
         #messagebox.showerror("Complete!", "All data entered with no error. Please close this window and the log window")

@@ -34,6 +34,9 @@ class APP:
         self.people = []
         self.ai_pdf_results = []
         self.ai_results = []
+        self.pages=0
+        self.start = -1
+        self.end = -1
 
         #application
         # Create the main window
@@ -134,6 +137,13 @@ class APP:
         self.export_button =tk.Button(self.simplified_text_tab, text="Export", command=self.onExportClick)
         self.export_button.pack(pady=5)
 
+        self.export_start_label = ttk.Label(self.simplified_text_tab, text="Start on Page:")
+        self.export_start_label.pack(side=tk.LEFT, padx=(5, 2), pady=5)
+
+        self.export_start_text = ttk.Entry(self.simplified_text_tab)
+        self.export_start_text.pack(side=tk.LEFT, padx=(0, 5), pady=5)
+        self.export_start_text.insert(0,"0")
+
         # AI mode
         self.ai_text_tab = tk.Frame(self.tabpane)
         if self.ai_mode:
@@ -173,6 +183,11 @@ class APP:
             self.files.append(file)
             self.filesList.insert("end",file)
             self.activePDF = file
+
+            with open(self.activePDF, 'rb') as pdf_file:
+                reader = PyPDF2.PdfReader(pdf_file)
+                self.pages = len(reader.pages)
+
             self.filesList.selection_clear(0, tk.END)
             self.filesList.selection_set(self.filesList.size()-1)
             self.setPDFView(self.activePDF)
@@ -195,6 +210,9 @@ class APP:
                 self.prevPDF = self.activePDF
                 self.activePDF = selected_item
                 self.setPDFView(self.activePDF)
+                with open(self.activePDF, 'rb') as pdf_file:
+                    reader = PyPDF2.PdfReader(pdf_file)
+                    self.pages = len(reader.pages)
                 self.people = []
 
         else:
@@ -521,8 +539,23 @@ class APP:
             if self.app_flag:
                 print("Patient creation started. Press Ctrl+Q to stop.")
                 try:
-                    robot = Robot(self)
-                    robot.create_new_patients()
+                    try:
+                        start_text = self.export_start_text.get()
+                        if not start_text:
+                            return
+                        start_num = int(start_text)
+                        if start_num < self.pages:
+                            self.start = start_num
+                    except ValueError:
+                        return
+                    if self.start > -1:
+                        robot = Robot(self)
+                        robot.create_new_patients()
+
+                    if self.end > -1:
+                        self.start = self.end
+                        self.export_start_text.delete(0, tk.END)
+                        self.export_start_text.insert(0,str(self.start))
                 except Exception as e:
                     print(f"Exception occurred during creation: {e}. Catching to make CSV")
 
