@@ -103,7 +103,7 @@ class Robot:
         # self.text_area.see(tk.END)
 
         for person in self.pdf_viewer_app.people:
-            self.pdf_viewer_app.end = self.pdf_viewer_app.index(person)
+            self.pdf_viewer_app.end = self.pdf_viewer_app.people.index(person)
             if self.pdf_viewer_app.end > self.start_index:
                 self.person = person
                 print("Adding: " + str(person))
@@ -253,10 +253,11 @@ class Robot:
         pyautogui.press('enter')
         if self.stop_typing: return
 
-        self.type_and_verify(self.png_locations["DOBBox"][0], self.png_locations["DOBBox"][1],
-                             self.person["Date of Birth"][0])
-        #pyautogui.click(self.png_locations["DOBBox"][0], self.png_locations["DOBBox"][1])
-        #pyautogui.write(self.person["Date of Birth"][0])
+
+        #self.type_and_verify(self.png_locations["DOBBox"][0], self.png_locations["DOBBox"][1],
+        #                     self.person["Date of Birth"][0])
+        pyautogui.click(self.png_locations["DOBBox"][0], self.png_locations["DOBBox"][1])
+        pyautogui.write(self.person["Date of Birth"][0])
         if self.stop_typing: return
 
 
